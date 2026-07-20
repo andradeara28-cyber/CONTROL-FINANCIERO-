@@ -100,7 +100,12 @@
     <form id="registro-form">
         <input type="date" id="fecha" required>
         
-        <input type="text" id="cliente" placeholder="Nombre del Cliente" required>
+        <!-- SE CAMBIÓ EL INPUT DE TEXTO POR ESTE SELECTOR -->
+        <select id="cliente" required>
+            <option value="" disabled selected>Tipo de Movimiento</option>
+            <option value="REVOLTURA">🔄 REVOLTURA</option>
+            <option value="INVERSION">📈 INVERSION</option>
+        </select>
         
         <select id="negocio" onchange="verificarAreaCarne()" required>
             <option value="" disabled selected>Selecciona el Negocio</option>
@@ -140,7 +145,7 @@
                 <thead>
                     <tr>
                         <th>Fecha</th>
-                        <th>Cliente / Proveedor</th>
+                        <th>Clasificación</th>
                         <th>Área</th>
                         <th>Peso (KG)</th>
                         <th>Tipo</th>
@@ -284,7 +289,6 @@
     function renderizarTabla() {
         localStorage.setItem('movimientos_multinegocio_v4', JSON.stringify(movimientos));
         
-        // VISTA ESPECIAL SI FILTRO ES FORRAJERA
         if (filtroActual === 'Forrajera') {
             vistaGeneral.style.display = 'none';
             vistaForrajera.style.display = 'block';
@@ -324,7 +328,6 @@
             return;
         }
 
-        // VISTA GENERAL Y DEMÁS NEGOCIOS
         vistaGeneral.style.display = 'block';
         vistaForrajera.style.display = 'none';
         tablaCuerpo.innerHTML = '';
@@ -395,7 +398,7 @@
         
         const nuevoMovimiento = {
             fecha: inputFecha.value,
-            cliente: document.getElementById('cliente').value.toUpperCase(),
+            cliente: document.getElementById('cliente').value, // Lee el valor seleccionado (REVOLTURA o INVERSION)
             negocio: selectNegocio.value,
             peso: selectNegocio.value === 'Carne' ? inputPeso.value : '', 
             tipo: document.getElementById('tipo').value,
@@ -421,7 +424,6 @@
         }
     }
 
-    // Ejecución inicial al cargar la página
     establecerFechaDeHoy();
     ajustarOrdenFechas();
     calcularSaldos();
