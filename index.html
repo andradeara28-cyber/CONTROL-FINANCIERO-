@@ -32,12 +32,11 @@
         button { background-color: #2c3e50; color: white; border: none; cursor: pointer; font-weight: bold; transition: background 0.2s; }
         button:hover { background-color: #1a252f; }
         
-        /* Contenedor específico para resaltar el peso cuando se activa */
         .campo-peso { transition: all 0.3s ease; }
         .campo-peso.oculto { opacity: 0.4; pointer-events: none; }
         
         /* Tabla */
-        .table-responsive { overflow-x: auto; }
+        .table-responsive { overflow-x: auto; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e1e8ed; }
         th { background-color: #f8f9fa; color: #2c3e50; }
@@ -56,9 +55,14 @@
         
         .monto-ingreso { color: #2ecc71; font-weight: bold; }
         .monto-egreso { color: #e74c3c; font-weight: bold; }
-        .monto-positivo { color: #2ecc71; }
-        .monto-negativo { color: #e74c3c; }
+        .monto-positivo { color: #2ecc71; font-weight: bold; }
+        .monto-negativo { color: #e74c3c; font-weight: bold; }
+        
         .btn-borrar { background: none; color: #e74c3c; border: none; cursor: pointer; padding: 0; font-size: 14px; text-align: left; }
+        
+        /* Contenedores para la vista dividida de Forrajera */
+        .vista-forrajera { display: none; }
+        .seccion-saldo-forrajera { font-size: 22px; font-weight: bold; text-align: right; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-right: 6px solid #f1c40f; }
     </style>
 </head>
 <body>
@@ -111,8 +115,8 @@
         </div>
 
         <select id="tipo" required>
-            <option value="Ingreso">Ingreso</option>
-            <option value="Egreso">Egreso</option>
+            <option value="Ingreso">Ingreso (Entrada)</option>
+            <option value="Egreso">Egreso (Salida)</option>
         </select>
 
         <select id="metodoPago" required>
@@ -123,33 +127,76 @@
         </select>
         
         <input type="number" id="monto" placeholder="Total ($)" min="0.01" step="0.01" required>
-        <input type="text" id="concepto" placeholder="Detalle (Ej: Pierna, lomo)" required>
+        <input type="text" id="concepto" placeholder="Concepto Detalle" required>
         <button type="submit">Registrar</button>
     </form>
 
-    <!-- TABLA DE HISTORIAL CON FILTROS -->
-    <h2>Historial de Movimientos</h2>
-    <div id="status-filtro" class="filter-status">Mostrando: Todos los movimientos</div>
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Cliente / Proveedor</th>
-                    <th>Área</th>
-                    <th>Peso (KG)</th>
-                    <th>Tipo</th>
-                    <th>Forma de Pago</th>
-                    <th>Concepto Detalle</th>
-                    <th>Total Saldo</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-cuerpo">
-                <!-- Se rellena dinámicamente -->
-            </tbody>
-        </table>
+    <!-- HISTORIAL GENERAL (VISTA POR DEFECTO) -->
+    <div id="contenedor-vista-general">
+        <h2>Historial de Movimientos</h2>
+        <div id="status-filtro" class="filter-status">Mostrando: Todos los movimientos</div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cliente / Proveedor</th>
+                        <th>Área</th>
+                        <th>Peso (KG)</th>
+                        <th>Tipo</th>
+                        <th>Forma de Pago</th>
+                        <th>Concepto Detalle</th>
+                        <th>Total Saldo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-cuerpo">
+                    <!-- Se rellena dinámicamente -->
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    <!-- VISTA EXCLUSIVA E INTELIGENTE PARA FORRAJERA -->
+    <div id="contenedor-vista-forrajera" class="vista-forrajera">
+        <h2>Control de Forrajera 🌾</h2>
+        <div class="filter-status">Mostrando reporte especializado de entradas y salidas</div>
+        
+        <h3>📥 ENTRADAS</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Concepto</th>
+                        <th>Total</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="forrajera-entradas-cuerpo"></tbody>
+            </table>
+        </div>
+
+        <h3>📤 SALIDAS</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Concepto</th>
+                        <th>Total</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="forrajera-salidas-cuerpo"></tbody>
+            </table>
+        </div>
+
+        <div class="seccion-saldo-forrajera">
+            Saldo Total Forrajera: <span id="forrajera-saldo-final">$0.00</span>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -163,7 +210,12 @@
     const inputPeso = document.getElementById('peso');
     const wrapperPeso = document.getElementById('wrapper-peso');
 
-    // Habilita o deshabilita el campo de KG dependiendo del área seleccionada
+    const vistaGeneral = document.getElementById('contenedor-vista-general');
+    const vistaForrajera = document.getElementById('contenedor-vista-forrajera');
+    const forrajeraEntradas = document.getElementById('forrajera-entradas-cuerpo');
+    const forrajeraSalidas = document.getElementById('forrajera-salidas-cuerpo');
+    const forrajeraSaldoFinal = document.getElementById('forrajera-saldo-final');
+
     function verificarAreaCarne() {
         if (selectNegocio.value === 'Carne') {
             wrapperPeso.classList.remove('oculto');
@@ -173,11 +225,10 @@
             wrapperPeso.classList.add('oculto');
             inputPeso.disabled = true;
             inputPeso.required = false;
-            inputPeso.value = ''; // Limpiar si había algo escrito
+            inputPeso.value = '';
         }
     }
 
-    // Poner la fecha de hoy automáticamente en el formulario
     function establecerFechaDeHoy() {
         const hoy = new Date();
         const yyyy = hoy.getFullYear();
@@ -190,7 +241,6 @@
         inputFecha.value = yyyy + '-' + mm + '-' + dd;
     }
 
-    // Formatear la fecha visual de YYYY-MM-DD a DD/MM/YYYY
     function formatearFechaVista(fechaString) {
         if(!fechaString) return '';
         const partes = fechaString.split('-');
@@ -232,6 +282,51 @@
     }
 
     function renderizarTabla() {
+        localStorage.setItem('movimientos_multinegocio_v4', JSON.stringify(movimientos));
+        
+        // VISTA ESPECIAL SI FILTRO ES FORRAJERA
+        if (filtroActual === 'Forrajera') {
+            vistaGeneral.style.display = 'none';
+            vistaForrajera.style.display = 'block';
+            
+            forrajeraEntradas.innerHTML = '';
+            forrajeraSalidas.innerHTML = '';
+            
+            let saldoForrajera = 0;
+
+            movimientos.forEach((mov) => {
+                if (mov.negocio !== 'Forrajera') return;
+                
+                const indiceReal = movimientos.indexOf(mov);
+                const montoNum = parseFloat(mov.monto);
+                const tr = document.createElement('tr');
+                
+                tr.innerHTML = `
+                    <td>${formatearFechaVista(mov.fecha)}</td>
+                    <td>${mov.concepto}</td>
+                    <td class="${mov.tipo === 'Ingreso' ? 'monto-ingreso' : 'monto-egreso'}">
+                        $${montoNum.toFixed(2)}
+                    </td>
+                    <td><button class="btn-borrar" onclick="eliminarMovimiento(${indiceReal})">Eliminar</button></td>
+                `;
+
+                if (mov.tipo === 'Ingreso') {
+                    forrajeraEntradas.appendChild(tr);
+                    saldoForrajera += montoNum;
+                } else {
+                    forrajeraSalidas.appendChild(tr);
+                    saldoForrajera -= montoNum;
+                }
+            });
+
+            forrajeraSaldoFinal.innerText = `$${saldoForrajera.toFixed(2)}`;
+            forrajeraSaldoFinal.className = saldoForrajera >= 0 ? 'monto-positivo' : 'monto-negativo';
+            return;
+        }
+
+        // VISTA GENERAL Y DEMÁS NEGOCIOS
+        vistaGeneral.style.display = 'block';
+        vistaForrajera.style.display = 'none';
         tablaCuerpo.innerHTML = '';
         
         const movimientosFiltrados = movimientos.filter(mov => {
@@ -241,11 +336,9 @@
 
         document.getElementById('status-filtro').innerText = `Mostrando: ${filtroActual === 'Todos' ? 'Todos los movimientos' : 'Solo área de ' + filtroActual}`;
 
-        movimientosFiltrados.forEach((mov, index) => {
+        movimientosFiltrados.forEach((mov) => {
             const indiceReal = movimientos.indexOf(mov);
             const montoNum = parseFloat(mov.monto);
-
-            // Si tiene peso registrado lo muestra con formato KG, si no pone un guión (-)
             const pesoTexto = mov.peso ? `<span class="badge badge-peso">⚖️ ${parseFloat(mov.peso).toFixed(3)} KG</span>` : '-';
 
             const tr = document.createElement('tr');
@@ -264,8 +357,6 @@
             `;
             tablaCuerpo.appendChild(tr);
         });
-
-        localStorage.setItem('movimientos_multinegocio_v4', JSON.stringify(movimientos));
     }
 
     function ajustarOrdenFechas() {
@@ -306,7 +397,7 @@
             fecha: inputFecha.value,
             cliente: document.getElementById('cliente').value.toUpperCase(),
             negocio: selectNegocio.value,
-            peso: selectNegocio.value === 'Carne' ? inputPeso.value : '', // Solo guarda peso si es Carne
+            peso: selectNegocio.value === 'Carne' ? inputPeso.value : '', 
             tipo: document.getElementById('tipo').value,
             metodoPago: document.getElementById('metodoPago').value,
             monto: document.getElementById('monto').value,
@@ -319,7 +410,7 @@
         renderizarTabla();
         form.reset();
         establecerFechaDeHoy(); 
-        verificarAreaCarne(); // Resetea el estado del campo peso
+        verificarAreaCarne(); 
     });
 
     function eliminarMovimiento(index) {
