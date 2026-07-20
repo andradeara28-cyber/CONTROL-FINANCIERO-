@@ -9,6 +9,7 @@
         .container { max-width: 1350px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
         h2 { color: #2c3e50; border-bottom: 2px solid #e1e8ed; padding-bottom: 8px; margin-top: 30px; }
+        h3 { color: #34495e; margin-top: 25px; margin-bottom: 10px; }
         
         /* Dashboard */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
@@ -26,6 +27,13 @@
         .tab-btn { padding: 10px 20px; border: none; background: #e0e6ed; color: #34495e; font-weight: bold; border-radius: 6px; cursor: pointer; }
         .tab-btn.active-tab { background: #e67e22; color: white; }
         
+        /* Resumen de cuentas por cliente único */
+        .contenedor-resumen-clientes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .tarjeta-cliente { background: #fdfefe; border: 1px solid #d5dbdb; border-top: 4px solid #3498db; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .tarjeta-cliente h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; border-bottom: 1px dashed #e5e7e9; padding-bottom: 5px; text-transform: uppercase; }
+        .tarjeta-cliente p { margin: 5px 0; font-size: 13px; color: #566573; display: flex; justify-content: space-between; }
+        .tarjeta-cliente .saldo-acumulado { font-size: 15px; font-weight: bold; margin-top: 10px; padding-top: 5px; border-top: 1px solid #eaeded; }
+
         /* Formulario */
         form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 30px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; align-items: center; }
         input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; width: 100%; }
@@ -106,6 +114,14 @@
         <button type="submit">Registrar</button>
     </form>
 
+    <!-- SECCIÓN DINÁMICA: CUENTAS GLOBALES DE CLIENTES CARNE -->
+    <div id="seccion-resumen-carne-clientes" style="display:none;">
+        <h3>📊 Estado de Cuentas Acumuladas (Totales por Cliente)</h3>
+        <div class="contenedor-resumen-clientes" id="lista-resumen-clientes">
+            <!-- Se llena automáticamente con JavaScript -->
+        </div>
+    </div>
+
     <!-- GENERAL -->
     <div id="vista-general" class="vista-seccion vista-activa">
         <h2>Historial General de Movimientos</h2>
@@ -150,9 +166,9 @@
         </div>
     </div>
 
-    <!-- CARNE CLIENTE (Abono Integrado) -->
+    <!-- CARNE CLIENTE -->
     <div id="vista-carne-cliente" class="vista-seccion">
-        <h2>Reporte: Clientes Carne 🥩</h2>
+        <h2>Reporte Diario: Historial de Notas de Clientes 🥩</h2>
         <div class="table-responsive">
             <table>
                 <thead>
@@ -163,9 +179,9 @@
                         <th>Concepto Detalle</th>
                         <th>Peso (KG)</th>
                         <th>Precio</th>
-                        <th>Total</th>
+                        <th>Total Nota</th>
                         <th>Abono</th>
-                        <th>Saldo</th>
+                        <th>Saldo Nota</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -218,8 +234,8 @@
 </div>
 
 <script>
-    // Saltamos a la versión v8 para actualizar la base de datos con abonos de clientes
-    let movimientos = JSON.parse(localStorage.getItem('movimientos_multinegocio_v8')) || [];
+    // Saltamos a la versión v9 para albergar la inteligencia de agrupación de cuentas acumuladas
+    let movimientos = JSON.parse(localStorage.getItem('movimientos_multinegocio_v9')) || [];
     let filtroActual = 'Todos';
     let subTabCarneActual = 'cliente';
 
@@ -228,6 +244,7 @@
     const selectNegocio = document.getElementById('negocio');
     const camposDinamicos = document.getElementById('campos-dinamicos-contenedor');
     const pestanasCarne = document.getElementById('pestanas-carne');
+    const seccionResumenClientes = document.getElementById('seccion-resumen-carne-clientes');
 
     function ajustarCamposFormulario() {
         const area = selectNegocio.value;
@@ -292,6 +309,14 @@
         subTabCarneActual = subTab;
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-tab'));
         document.getElementById(`btn-sub-${subTab}`).classList.add('active-tab');
+        
+        // Mostrar la barra de saldos únicos acumulados SOLAMENTE en la pestaña de Cliente Carne
+        if (filtroActual === 'Carne' && subTabCarneActual === 'cliente') {
+            seccionResumenClientes.style.display = 'block';
+        } else {
+            seccionResumenClientes.style.display = 'none';
+        }
+
         ajustarCamposFormulario();
         actualizarVistasTablas();
     }
@@ -300,7 +325,15 @@
         filtroActual = area;
         document.querySelectorAll('.dash-card').forEach(card => card.classList.remove('active-filter'));
         document.getElementById(`card-${area}`).classList.add('active-filter');
+        
         pestanasCarne.style.display = (area === 'Carne') ? 'flex' : 'none';
+        
+        if (area === 'Carne' && subTabCarneActual === 'cliente') {
+            seccionResumenClientes.style.display = 'block';
+        } else {
+            seccionResumenClientes.style.display = 'none';
+        }
+
         actualizarVistasTablas();
     }
 
@@ -319,6 +352,7 @@
         return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : f;
     }
 
+    // Calcula caja real y actualiza las tarjetas del dashboard
     function calcularSaldosYTotales() {
         let saldos = { Carne: 0, Forrajera: 0, Tuna: 0, Xoconostle: 0 };
         let totalGeneral = 0;
@@ -326,7 +360,6 @@
         movimientos.forEach(mov => {
             if (mov.negocio === 'Carne') {
                 if (mov.subTipo === 'cliente') {
-                    // El dinero real en caja es lo que el cliente te abonó en efectivo/transferencia
                     let abonoEfectivo = parseFloat(mov.abono || 0);
                     saldos.Carne += abonoEfectivo;
                     totalGeneral += abonoEfectivo;
@@ -355,9 +388,65 @@
         bg.className = totalGeneral >= 0 ? 'monto-positivo' : 'monto-negativo';
     }
 
+    // AGRUPACIÓN INTELIGENTE: Suma compras y abonos históricos de cada cliente único
+    function renderizarResumenClientesAcumulado() {
+        const contenedor = document.getElementById('lista-resumen-clientes');
+        contenedor.innerHTML = '';
+
+        let cuentasClientes = {};
+
+        movimientos.forEach(mov => {
+            if (mov.negocio === 'Carne' && mov.subTipo === 'cliente') {
+                let nombre = mov.cliente.trim().toUpperCase();
+                let totalNota = parseFloat(mov.montoCalculado || 0);
+                let abonoNota = parseFloat(mov.abono || 0);
+
+                if (!cuentasClientes[nombre]) {
+                    cuentasClientes[nombre] = { comprado: 0, abonado: 0 };
+                }
+                cuentasClientes[nombre].comprado += totalNota;
+                cuentasClientes[nombre].abonado += abonoNota;
+            }
+        });
+
+        const listaNombres = Object.keys(cuentasClientes);
+        if (listaNombres.length === 0) {
+            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; grid-column: 1/-1; text-align:center;">Sin deudas o clientes registrados todavía.</p>`;
+            return;
+        }
+
+        listaNombres.forEach(nombre => {
+            const info = cuentasClientes[nombre];
+            const saldoTotalPendiente = info.comprado - info.abonado;
+
+            const div = document.createElement('div');
+            div.className = 'tarjeta-cliente';
+            // Cambia el color del borde de la tarjeta si ya liquidó o si aún debe dinero
+            div.style.borderTopColor = saldoTotalPendiente <= 0 ? '#2ecc71' : '#e74c3c';
+
+            div.innerHTML = `
+                <h4>👤 ${nombre}</h4>
+                <p><span>Total Comprado:</span> <span>$${info.comprado.toFixed(2)}</span></p>
+                <p><span>Total Abonado:</span> <span class="monto-positivo">$${info.abonado.toFixed(2)}</span></p>
+                <div class="saldo-acumulado">
+                    <span>Deuda Acumulada Actual:</span>
+                    <span class="${saldoTotalPendiente <= 0 ? 'monto-positivo' : 'monto-negativo'}">
+                        $${saldoTotalPendiente.toFixed(2)}
+                    </span>
+                </div>
+            `;
+            contenedor.appendChild(div);
+        });
+    }
+
     function actualizarVistasTablas() {
-        localStorage.setItem('movimientos_multinegocio_v8', JSON.stringify(movimientos));
+        localStorage.setItem('movimientos_multinegocio_v9', JSON.stringify(movimientos));
         calcularSaldosYTotales();
+        
+        if (filtroActual === 'Carne' && subTabCarneActual === 'cliente') {
+            renderizarResumenClientesAcumulado();
+        }
+
         document.querySelectorAll('.vista-seccion').forEach(v => v.classList.remove('vista-activa'));
 
         if (filtroActual === 'Todos') {
@@ -437,7 +526,7 @@
             let saldo = total - abono;
             tr.innerHTML = `
                 <td>${formatearFecha(mov.fecha)}</td>
-                <td>${mov.cliente}</td>
+                <td><strong>${mov.cliente}</strong></td>
                 <td><span class="badge badge-pago">${mov.metodoPago}</span></td>
                 <td>${mov.concepto}</td>
                 <td>${parseFloat(mov.peso || 0).toFixed(3)} KG</td>
@@ -503,7 +592,7 @@
             if (subTabCarneActual === 'cliente') {
                 let p = parseFloat(document.getElementById('c_peso').value || 0);
                 let pr = parseFloat(document.getElementById('c_precio').value || 0);
-                nuevoMov.cliente = document.getElementById('c_nombre').value.toUpperCase();
+                nuevoMov.cliente = document.getElementById('c_nombre').value.toUpperCase().trim();
                 nuevoMov.metodoPago = document.getElementById('c_pago').value;
                 nuevoMov.concepto = document.getElementById('c_concepto').value.toUpperCase();
                 nuevoMov.peso = p;
@@ -513,7 +602,7 @@
             } else if (subTabCarneActual === 'proveedor') {
                 let k = parseFloat(document.getElementById('p_kilos').value || 0);
                 let pr = parseFloat(document.getElementById('p_precio').value || 0);
-                nuevoMov.proveedor = document.getElementById('p_proveedor').value.toUpperCase();
+                nuevoMov.proveedor = document.getElementById('p_proveedor').value.toUpperCase().trim();
                 nuevoMov.numeroNota = document.getElementById('p_nota').value;
                 nuevoMov.kilos = k;
                 nuevoMov.precio = pr;
@@ -529,7 +618,7 @@
             nuevoMov.monto = document.getElementById('f_monto').value;
             nuevoMov.concepto = document.getElementById('f_concepto').value.toUpperCase();
         } else {
-            nuevoMov.cliente = document.getElementById('tx_cliente').value.toUpperCase();
+            nuevoMov.cliente = document.getElementById('tx_cliente').value.toUpperCase().trim();
             nuevoMov.metodoPago = document.getElementById('tx_pago').value;
             nuevoMov.monto = document.getElementById('tx_monto').value;
             nuevoMov.concepto = document.getElementById('tx_concepto').value.toUpperCase();
