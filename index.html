@@ -27,7 +27,7 @@
         .card-total.active-filter { background: #1a252f; border-bottom: 4px solid #3498db; }
         
         /* Formulario */
-        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 30px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; }
+        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 30px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; }
         input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; width: 100%; }
         button { background-color: #2c3e50; color: white; border: none; cursor: pointer; font-weight: bold; transition: background 0.2s; }
         button:hover { background-color: #1a252f; }
@@ -89,6 +89,8 @@
     <!-- FORMULARIO DE REGISTRO -->
     <h2>Registrar Nuevo Movimiento</h2>
     <form id="registro-form">
+        <input type="date" id="fecha" required>
+        
         <input type="text" id="cliente" placeholder="Nombre del Cliente" required>
         
         <select id="negocio" required>
@@ -123,6 +125,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>Fecha</th>
                     <th>Cliente</th>
                     <th>Negocio</th>
                     <th>Tipo</th>
@@ -140,11 +143,33 @@
 </div>
 
 <script>
-    let movimientos = JSON.parse(localStorage.getItem('movimientos_multinegocio_v2')) || [];
+    let movimientos = JSON.parse(localStorage.getItem('movimientos_multinegocio_v3')) || [];
     let filtroActual = 'Todos';
 
     const form = document.getElementById('registro-form');
     const tablaCuerpo = document.getElementById('tabla-cuerpo');
+    const inputFecha = document.getElementById('fecha');
+
+    // Poner la fecha de hoy automáticamente en el formulario
+    function establecerFechaDeHoy() {
+        const hoy = new Date();
+        const yyyy = hoy.getFullYear();
+        let mm = hoy.getMonth() + 1; 
+        let dd = hoy.getDate();
+
+        if (dd < 10) dd = '0' + dd;
+        if (mm < 10) mm = '0' + mm;
+
+        inputFecha.value = yyyy + '-' + mm + '-' + dd;
+    }
+
+    // Formatear la fecha visual de YYYY-MM-DD a DD/MM/YYYY
+    function formatearFechaVista(fechaString) {
+        if(!fechaString) return '';
+        const partes = fechaString.split('-');
+        if(partes.length !== 3) return fechaString;
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
 
     function calcularSaldos() {
         let saldos = { Carne: 0, Forrajera: 0, Tuna: 0, Xoconostle: 0 };
@@ -191,12 +216,12 @@
         document.getElementById('status-filtro').innerText = `Mostrando: ${filtroActual === 'Todos' ? 'Todos los movimientos' : 'Solo área de ' + filtroActual}`;
 
         movimientosFiltrados.forEach((mov, index) => {
-            // Buscamos el índice real en el array original para poder eliminar correctamente
             const indiceReal = movimientos.indexOf(mov);
             const montoNum = parseFloat(mov.monto);
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
+                <td>${formatearFechaVista(mov.fecha)}</td>
                 <td><strong>${mov.cliente}</strong></td>
                 <td><span class="badge badge-negocio">${obtenerEmojiNegocio(mov.negocio)} ${mov.negocio}</span></td>
                 <td><span class="badge ${mov.tipo === 'Ingreso' ? 'badge-ingreso' : 'badge-egreso'}">${mov.tipo}</span></td>
@@ -210,18 +235,21 @@
             tablaCuerpo.appendChild(tr);
         });
 
-        localStorage.setItem('movimientos_multinegocio_v2', JSON.stringify(movimientos));
+        localStorage.setItem('movimientos_multinegocio_v3', JSON.stringify(movimientos));
+    }
+
+    function ajustarOrdenFechas() {
+        // Ordena los movimientos del más reciente al más antiguo por fecha
+        movimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     }
 
     function filtrarPorArea(area) {
         filtroActual = area;
         
-        // Quitar la clase activa de todas las tarjetas
         document.querySelectorAll('.dash-card').forEach(card => {
             card.classList.remove('active-filter');
         });
         
-        // Añadir clase activa a la tarjeta seleccionada
         document.getElementById(`card-${area}`).classList.add('active-filter');
         
         renderizarTabla();
@@ -246,6 +274,7 @@
         e.preventDefault();
         
         const nuevoMovimiento = {
+            fecha: inputFecha.value,
             cliente: document.getElementById('cliente').value.toUpperCase(),
             negocio: document.getElementById('negocio').value,
             tipo: document.getElementById('tipo').value,
@@ -255,9 +284,11 @@
         };
 
         movimientos.push(nuevoMovimiento);
+        ajustarOrdenFechas();
         calcularSaldos();
         renderizarTabla();
         form.reset();
+        establecerFechaDeHoy(); // Volver a poner la fecha de hoy tras limpiar
     });
 
     function eliminarMovimiento(index) {
@@ -269,6 +300,8 @@
     }
 
     // Ejecución inicial al cargar la página
+    establecerFechaDeHoy();
+    ajustarOrdenFechas();
     calcularSaldos();
     renderizarTabla();
 </script>
