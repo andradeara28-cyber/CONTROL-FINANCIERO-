@@ -227,15 +227,12 @@
 
     <!-- SECCIÓN DE RESUMEN GLOBAL FIJA (SIEMPRE VISIBLE AL FINAL) -->
     <hr style="margin-top: 40px; border: 0; border-top: 2px dashed #bdc3c7;">
-    <h2>📊 Cuentas Globales por Cobrar (Clientes Carne)</h2>
-    <div class="contenedor-resumen-clientes" id="lista-resumen-clientes">
-        <!-- Se llena automáticamente en tiempo real -->
-    </div>
+    <h2>📊 Estado de Cuentas Acumuladas (Totales por Cliente)</h2>
+    <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
 
 </div>
 
 <script>
-    // Nueva versión v9_fija para evitar conflictos de bases de datos
     let movimientos = JSON.parse(localStorage.getItem('movimientos_multinegocio_v9_fija')) || [];
     let filtroActual = 'Todos';
     let subTabCarneActual = 'cliente';
@@ -250,7 +247,14 @@
         const area = selectNegocio.value;
         if (area === 'Carne') {
             if (subTabCarneActual === 'cliente') {
-                camposDinamicos.innerHTML = `
+                // Obtener el tipo de registro (Venta o Abono Puro) para ocultar campos
+                const tipoRegistro = document.getElementById('c_tipo_registro')?.value || 'venta';
+                
+                let htmlCampos = `
+                    <select id="c_tipo_registro" onchange="ajustarCamposFormulario()" required>
+                        <option value="venta" ${tipoRegistro === 'venta' ? 'selected' : ''}>📝 Nueva Venta (Nota)</option>
+                        <option value="abono" ${tipoRegistro === 'abono' ? 'selected' : ''}>💵 Solo Abono / Pago</option>
+                    </select>
                     <input type="text" id="c_nombre" placeholder="Nombre Cliente" required>
                     <select id="c_pago" required>
                         <option value="" disabled selected>Forma de Pago</option>
@@ -259,10 +263,22 @@
                         <option value="Tarjeta">💳 Tarjeta</option>
                     </select>
                     <input type="text" id="c_concepto" placeholder="Concepto Detalle" required>
-                    <input type="number" id="c_peso" placeholder="Peso (KG)" min="0" step="0.001" required>
-                    <input type="number" id="c_precio" placeholder="Precio ($)" min="0" step="0.01" required>
-                    <input type="number" id="c_abono" placeholder="Abono ($)" min="0" step="0.01" value="0" required>
                 `;
+
+                if (tipoRegistro === 'venta') {
+                    htmlCampos += `
+                        <input type="number" id="c_peso" placeholder="Peso (KG)" min="0" step="0.001" required>
+                        <input type="number" id="c_precio" placeholder="Precio ($)" min="0" step="0.01" required>
+                        <input type="number" id="c_abono" placeholder="Abono ($)" min="0" step="0.01" value="0" required>
+                    `;
+                } else {
+                    // Si es "Solo Abono", quitamos Peso y Precio, y el monto va directo a un solo campo de Abono Obligatorio
+                    htmlCampos += `
+                        <input type="number" id="c_abono" placeholder="Monto del Abono ($)" min="0.01" step="0.01" required>
+                    `;
+                }
+                camposDinamicos.innerHTML = htmlCampos;
+
             } else if (subTabCarneActual === 'proveedor') {
                 camposDinamicos.innerHTML = `
                     <input type="text" id="p_proveedor" placeholder="Nombre Proveedor" required>
@@ -371,7 +387,6 @@
         bg.className = totalGeneral >= 0 ? 'monto-positivo' : 'monto-negativo';
     }
 
-    // FUNCIÓN GLOBAL: Genera las tarjetas acumuladas fijas abajo
     function renderizarResumenClientesAcumulado() {
         const contenedor = document.getElementById('lista-resumen-clientes');
         contenedor.innerHTML = '';
@@ -408,11 +423,11 @@
 
             div.innerHTML = `
                 <h4>👤 ${nombre}</h4>
-                <p><span>Total Comprado (Mercancía):</span> <span>$${info.comprado.toFixed(2)}</span></p>
-                <p><span>Total Abonado (Pagos):</span> <span class="monto-positivo">$${info.abonado.toFixed(2)}</span></p>
+                <p><span>Total Comprado:</span> <span>$${info.comprado.toFixed(2)}</span></p>
+                <p><span>Total Abonado:</span> <span class="monto-positivo">$${info.abonado.toFixed(2)}</span></p>
                 <div class="saldo-acumulado">
-                    <span>Deuda Total a la Fecha:</span>
-                    <span class="${saldoTotalPendiente <= 0 ? 'monto-positivo' : 'monto-negativo'}" style="font-size: 18px;">
+                    <span>Deuda Acumulada Actual:</span>
+                    <span class="${saldoTotalPendiente <= 0 ? 'monto-positivo' : 'monto-negativo'}">
                         $${saldoTotalPendiente.toFixed(2)}
                     </span>
                 </div>
@@ -424,8 +439,6 @@
     function actualizarVistasTablas() {
         localStorage.setItem('movimientos_multinegocio_v9_fija', JSON.stringify(movimientos));
         calcularSaldosYTotales();
-        
-        // Se ejecuta SIEMPRE para mantener al día el saldo acumulado
         renderizarResumenClientesAcumulado();
 
         document.querySelectorAll('.vista-seccion').forEach(v => v.classList.remove('vista-activa'));
@@ -459,8 +472,11 @@
         movimientos.forEach((mov, idx) => {
             const tr = document.createElement('tr');
             let itemCliente = mov.cliente || mov.proveedor || '-';
-            let monto = parseFloat(mov.montoCalculado || mov.monto || 0);
-            let tipoLabel = mov.subTipo ? (mov.subTipo === 'cliente' ? 'Cliente' : 'Proveedor') : (mov.tipo || 'Ingreso');
+            
+            // Para la vista general, si fue un abono puro mostramos el abono, si no, el monto calculado de la nota
+            let monto = (mov.negocio === 'Carne' && mov.isAbonoPuro) ? parseFloat(mov.abono || 0) : parseFloat(mov.montoCalculado || mov.monto || 0);
+            
+            let tipoLabel = mov.subTipo ? (mov.subTipo === 'cliente' ? (mov.isAbonoPuro ? 'Abono' : 'Cliente') : 'Proveedor') : (mov.tipo || 'Ingreso');
             tr.innerHTML = `
                 <td>${formatearFecha(mov.fecha)}</td>
                 <td><strong>${itemCliente}</strong></td>
@@ -505,13 +521,18 @@
             let total = parseFloat(mov.montoCalculado || 0);
             let abono = parseFloat(mov.abono || 0);
             let saldo = total - abono;
+            
+            // Ajuste visual si es abono puro (sin mercancía)
+            let pesoDisplay = mov.isAbonoPuro ? '-' : `${parseFloat(mov.peso || 0).toFixed(3)} KG`;
+            let precioDisplay = mov.isAbonoPuro ? '-' : `$${parseFloat(mov.precio || 0).toFixed(2)}`;
+
             tr.innerHTML = `
                 <td>${formatearFecha(mov.fecha)}</td>
                 <td><strong>${mov.cliente}</strong></td>
                 <td><span class="badge badge-pago">${mov.metodoPago}</span></td>
                 <td>${mov.concepto}</td>
-                <td>${parseFloat(mov.peso || 0).toFixed(3)} KG</td>
-                <td>$${parseFloat(mov.precio || 0).toFixed(2)}</td>
+                <td>${pesoDisplay}</td>
+                <td>${precioDisplay}</td>
                 <td style="font-weight:bold; color:#2c3e50;">$${total.toFixed(2)}</td>
                 <td class="monto-ingreso">$${abono.toFixed(2)}</td>
                 <td class="${saldo <= 0 ? 'monto-ingreso' : 'monto-egreso'}">$${saldo.toFixed(2)}</td>
@@ -571,15 +592,27 @@
         if (area === 'Carne') {
             nuevoMov.subTipo = subTabCarneActual;
             if (subTabCarneActual === 'cliente') {
-                let p = parseFloat(document.getElementById('c_peso').value || 0);
-                let pr = parseFloat(document.getElementById('c_precio').value || 0);
+                const tipoReg = document.getElementById('c_tipo_registro').value;
                 nuevoMov.cliente = document.getElementById('c_nombre').value.toUpperCase().trim();
                 nuevoMov.metodoPago = document.getElementById('c_pago').value;
                 nuevoMov.concepto = document.getElementById('c_concepto').value.toUpperCase();
-                nuevoMov.peso = p;
-                nuevoMov.precio = pr;
-                nuevoMov.abono = parseFloat(document.getElementById('c_abono').value || 0);
-                nuevoMov.montoCalculado = p * pr;
+                
+                if (tipoReg === 'venta') {
+                    let p = parseFloat(document.getElementById('c_peso').value || 0);
+                    let pr = parseFloat(document.getElementById('c_precio').value || 0);
+                    nuevoMov.peso = p;
+                    nuevoMov.precio = pr;
+                    nuevoMov.montoCalculado = p * pr;
+                    nuevoMov.abono = parseFloat(document.getElementById('c_abono').value || 0);
+                    nuevoMov.isAbonoPuro = false;
+                } else {
+                    // Es un Abono Puro
+                    nuevoMov.peso = 0;
+                    nuevoMov.precio = 0;
+                    nuevoMov.montoCalculado = 0; // No añade deuda de mercancía
+                    nuevoMov.abono = parseFloat(document.getElementById('c_abono').value || 0);
+                    nuevoMov.isAbonoPuro = true;
+                }
             } else if (subTabCarneActual === 'proveedor') {
                 let k = parseFloat(document.getElementById('p_kilos').value || 0);
                 let pr = parseFloat(document.getElementById('p_precio').value || 0);
@@ -624,7 +657,7 @@
 
     establecerFechaDeHoy();
     selectNegocio.value = "Carne";
-    filtrarPorArea("Todos"); // Iniciamos directo en el historial general como en tu captura
+    filtrarPorArea("Todos");
     ajustarCamposFormulario();
 </script>
 
