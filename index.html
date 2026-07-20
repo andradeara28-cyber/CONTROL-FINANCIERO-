@@ -95,25 +95,23 @@
         </div>
     </div>
 
-    <!-- FORMULARIO DE REGISTRO REFORZADO -->
+    <!-- FORMULARIO DE REGISTRO DINÁMICO -->
     <h2>Registrar Nuevo Movimiento</h2>
     <form id="registro-form">
         <input type="date" id="fecha" required>
         
-        <!-- ESTE ES EL SELECTOR QUE REEMPLAZA AL INPUT DE TEXTO -->
-        <select id="cliente" required>
-            <option value="" disabled selected>Tipo de Movimiento</option>
-            <option value="REVOLTURA">🔄 REVOLTURA</option>
-            <option value="INVERSION">📈 INVERSION</option>
-        </select>
-        
-        <select id="negocio" onchange="verificarAreaCarne()" required>
+        <select id="negocio" onchange="ajustarFormularioPorNegocio()" required>
             <option value="" disabled selected>Selecciona el Negocio</option>
             <option value="Carne">🥩 Carne</option>
             <option value="Forrajera">🌾 Forrajera</option>
             <option value="Tuna">🌵 Tuna</option>
             <option value="Xoconostle">🔴 Xoconostle</option>
         </select>
+
+        <!-- CONTENEDOR DINÁMICO: Cambia automáticamente entre texto o menú desplegable -->
+        <div id="contenedor-cliente-dinamico" style="width: 100%;">
+            <input type="text" id="cliente" placeholder="Nombre del Cliente" required>
+        </div>
 
         <div id="wrapper-peso" class="campo-peso oculto">
             <input type="number" id="peso" placeholder="Peso (KG)" min="0.001" step="0.001" disabled>
@@ -145,7 +143,7 @@
                 <thead>
                     <tr>
                         <th>Fecha</th>
-                        <th>Clasificación</th>
+                        <th>Cliente / Clasificación</th>
                         <th>Área</th>
                         <th>Peso (KG)</th>
                         <th>Tipo</th>
@@ -205,8 +203,8 @@
 </div>
 
 <script>
-    // Se cambia la clave del LocalStorage para forzar la actualización limpia en el navegador
-    let movimientos = JSON.parse(localStorage.getItem('movimientos_multinegocio_v5')) || [];
+    // Usamos v6 para asegurar una base de datos limpia y adaptada a la nueva lógica mixta
+    let movimientos = JSON.parse(localStorage.getItem('movimientos_multinegocio_v6')) || [];
     let filtroActual = 'Todos';
 
     const form = document.getElementById('registro-form');
@@ -215,6 +213,7 @@
     const selectNegocio = document.getElementById('negocio');
     const inputPeso = document.getElementById('peso');
     const wrapperPeso = document.getElementById('wrapper-peso');
+    const contenedorCliente = document.getElementById('contenedor-cliente-dinamico');
 
     const vistaGeneral = document.getElementById('contenedor-vista-general');
     const vistaForrajera = document.getElementById('contenedor-vista-forrajera');
@@ -222,8 +221,12 @@
     const forrajeraSalidas = document.getElementById('forrajera-salidas-cuerpo');
     const forrajeraSaldoFinal = document.getElementById('forrajera-saldo-final');
 
-    function verificarAreaCarne() {
-        if (selectNegocio.value === 'Carne') {
+    // ESTA FUNCIÓN HACE LA MAGIA DE CAMBIAR EL CAMPO SEGÚN EL NEGOCIO
+    function ajustarFormularioPorNegocio() {
+        const negocioSeleccionado = selectNegocio.value;
+
+        // 1. Control del campo de Peso (Solo para Carne)
+        if (negocioSeleccionado === 'Carne') {
             wrapperPeso.classList.remove('oculto');
             inputPeso.disabled = false;
             inputPeso.required = true;
@@ -232,6 +235,23 @@
             inputPeso.disabled = true;
             inputPeso.required = false;
             inputPeso.value = '';
+        }
+
+        // 2. Control dinámico del Cliente / Clasificación
+        if (negocioSeleccionado === 'Forrajera') {
+            // Si es Forrajera, insertamos el menú desplegable
+            contenedorCliente.innerHTML = `
+                <select id="cliente" required>
+                    <option value="" disabled selected>Tipo de Movimiento</option>
+                    <option value="REVOLTURA">🔄 REVOLTURA</option>
+                    <option value="INVERSION">📈 INVERSION</option>
+                </select>
+            `;
+        } else {
+            // Si es cualquier otro negocio, volvemos a poner el cuadro de texto para el cliente
+            contenedorCliente.innerHTML = `
+                <input type="text" id="cliente" placeholder="Nombre del Cliente" required>
+            `;
         }
     }
 
@@ -288,7 +308,7 @@
     }
 
     function renderizarTabla() {
-        localStorage.setItem('movimientos_multinegocio_v5', JSON.stringify(movimientos));
+        localStorage.setItem('movimientos_multinegocio_v6', JSON.stringify(movimientos));
         
         if (filtroActual === 'Forrajera') {
             vistaGeneral.style.display = 'none';
@@ -306,6 +326,7 @@
                 const montoNum = parseFloat(mov.monto);
                 const tr = document.createElement('tr');
                 
+                // Mantiene limpia la vista exclusiva de Forrajera (Solo fecha, concepto, total)
                 tr.innerHTML = `
                     <td>${formatearFechaVista(mov.fecha)}</td>
                     <td>${mov.concepto}</td>
@@ -397,9 +418,11 @@
     form.addEventListener('submit', (e) => {
         e.preventDefault();
         
+        const valorCliente = document.getElementById('cliente').value;
+
         const nuevoMovimiento = {
             fecha: inputFecha.value,
-            cliente: document.getElementById('cliente').value, 
+            cliente: selectNegocio.value === 'Forrajera' ? valorCliente : valorCliente.toUpperCase(), 
             negocio: selectNegocio.value,
             peso: selectNegocio.value === 'Carne' ? inputPeso.value : '', 
             tipo: document.getElementById('tipo').value,
@@ -414,7 +437,7 @@
         renderizarTabla();
         form.reset();
         establecerFechaDeHoy(); 
-        verificarAreaCarne(); 
+        ajustarFormularioPorNegocio(); 
     });
 
     function eliminarMovimiento(index) {
