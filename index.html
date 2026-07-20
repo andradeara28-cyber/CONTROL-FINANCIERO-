@@ -100,7 +100,6 @@
     <form id="registro-form">
         <input type="date" id="fecha" required>
         
-        <!-- SE CAMBIÓ EL INPUT DE TEXTO POR ESTE SELECTOR -->
         <select id="cliente" required>
             <option value="" disabled selected>Tipo de Movimiento</option>
             <option value="REVOLTURA">🔄 REVOLTURA</option>
@@ -286,6 +285,7 @@
         else elemento.className = '';
     }
 
+    // AQUÍ CORREGÍ EL RENDERIZADO EXCLUSIVO PARA DEJAR SOLO FECHA, CONCEPTO Y TOTAL
     function renderizarTabla() {
         localStorage.setItem('movimientos_multinegocio_v4', JSON.stringify(movimientos));
         
@@ -305,6 +305,7 @@
                 const montoNum = parseFloat(mov.monto);
                 const tr = document.createElement('tr');
                 
+                // Limpiado por completo para que no aparezca la columna Clasificación (Revoltura/Inversión)
                 tr.innerHTML = `
                     <td>${formatearFechaVista(mov.fecha)}</td>
                     <td>${mov.concepto}</td>
@@ -398,7 +399,7 @@
         
         const nuevoMovimiento = {
             fecha: inputFecha.value,
-            cliente: document.getElementById('cliente').value, // Lee el valor seleccionado (REVOLTURA o INVERSION)
+            cliente: document.getElementById('cliente').value, 
             negocio: selectNegocio.value,
             peso: selectNegocio.value === 'Carne' ? inputPeso.value : '', 
             tipo: document.getElementById('tipo').value,
