@@ -225,15 +225,32 @@
         </div>
     </div>
 
-    <!-- SECCIÓN DE RESUMEN GLOBAL FIJA -->
+    <!-- SECCIÓN DE RESUMEN INTELIGENTE / DINÁMICO POR SEPARADO -->
     <hr style="margin-top: 40px; border: 0; border-top: 2px dashed #bdc3c7;">
-    <h2>📊 Estado de Cuentas Acumuladas (Totales por Cliente)</h2>
-    <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
+    
+    <!-- Bloque exclusivo para Clientes Carne -->
+    <div id="bloque-resumen-clientes">
+        <h2>📊 Estado de Cuentas Acumuladas (Totales por Cliente Carne)</h2>
+        <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
+    </div>
+
+    <!-- Bloque exclusivo para Proveedores Carne -->
+    <div id="bloque-resumen-proveedores" style="margin-top: 20px;">
+        <h2>📊 Estado de Cuentas Acumuladas (Totales por Proveedor Carne)</h2>
+        <div class="contenedor-resumen-clientes" id="lista-resumen-proveedores"></div>
+    </div>
 
 </div>
 
 <script>
-    let movimientos = JSON.parse(localStorage.getItem('movimientos_multinegocio_v9_fija')) || [];
+    const CLAVE_A = 'movimientos_multinegocio_v9';
+    const CLAVE_B = 'movimientos_multinegocio_v9_fija';
+    
+    let datosGuardados = localStorage.getItem(CLAVE_B) || localStorage.getItem(CLAVE_A);
+    let movimientos = datosGuardados ? JSON.parse(datosGuardados) : [];
+
+    localStorage.setItem(CLAVE_B, JSON.stringify(movimientos));
+
     let filtroActual = 'Todos';
     let subTabCarneActual = 'cliente';
 
@@ -242,14 +259,16 @@
     const selectNegocio = document.getElementById('negocio');
     const camposDinamicos = document.getElementById('campos-dinamicos-contenedor');
     const pestanasCarne = document.getElementById('pestanas-carne');
+    
+    const bloqueClientes = document.getElementById('bloque-resumen-clientes');
+    const bloqueProveedores = document.getElementById('bloque-resumen-proveedores');
 
-    // Función corregida con candado estricto para forzar la separación por comas (17,000.00)
     function formatearMoneda(valor) {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
             minimumFractionDigits: 2
-        }).format(valor).replace('$', '$');
+        }).format(valor);
     }
 
     function ajustarCamposFormulario() {
@@ -397,7 +416,6 @@
     function renderizarResumenClientesAcumulado() {
         const contenedor = document.getElementById('lista-resumen-clientes');
         contenedor.innerHTML = '';
-
         let cuentasClientes = {};
 
         movimientos.forEach(mov => {
@@ -416,7 +434,7 @@
 
         const listaNombres = Object.keys(cuentasClientes);
         if (listaNombres.length === 0) {
-            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">Sin deudas o clientes registrados todavía.</p>`;
+            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">Sin clientes registrados todavía.</p>`;
             return;
         }
 
@@ -433,7 +451,56 @@
                 <p><span>Total Comprado:</span> <span>${formatearMoneda(info.comprado)}</span></p>
                 <p><span>Total Abonado:</span> <span class="monto-positivo">${formatearMoneda(info.abonado)}</span></p>
                 <div class="saldo-acumulado">
-                    <span>Deuda Acumulada Actual:</span>
+                    <span>Deuda de Cliente Actual:</span>
+                    <span class="${saldoTotalPendiente <= 0 ? 'monto-positivo' : 'monto-negativo'}">
+                        ${formatearMoneda(saldoTotalPendiente)}
+                    </span>
+                </div>
+            `;
+            contenedor.appendChild(div);
+        });
+    }
+
+    function renderizarResumenProveedoresAcumulado() {
+        const contenedor = document.getElementById('lista-resumen-proveedores');
+        contenedor.innerHTML = '';
+        let cuentasProveedores = {};
+
+        movimientos.forEach(mov => {
+            if (mov.negocio === 'Carne' && mov.subTipo === 'proveedor') {
+                let nombre = mov.proveedor.trim().toUpperCase();
+                let totalNota = parseFloat(mov.montoCalculado || 0);
+                let abonoNota = parseFloat(mov.abono || 0);
+
+                if (!cuentasProveedores[nombre]) {
+                    cuentasProveedores[nombre] = { comprado: 0, abonado: 0 };
+                }
+                cuentasProveedores[nombre].comprado += totalNota;
+                cuentasProveedores[nombre].abonado += abonoNota;
+            }
+        });
+
+        const listaNombres = Object.keys(cuentasProveedores);
+        if (listaNombres.length === 0) {
+            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">Sin proveedores registrados todavía.</p>`;
+            return;
+        }
+
+        listaNombres.forEach(nombre => {
+            const info = cuentasProveedores[nombre];
+            const saldoTotalPendiente = info.comprado - info.abonado;
+
+            const div = document.createElement('div');
+            div.className = 'tarjeta-cliente';
+            // Para proveedores usamos color morado/azul para diferenciarlos visualmente
+            div.style.borderTopColor = saldoTotalPendiente <= 0 ? '#2ecc71' : '#9b59b6';
+
+            div.innerHTML = `
+                <h4>🏭 ${nombre}</h4>
+                <p><span>Total de Notas:</span> <span>${formatearMoneda(info.comprado)}</span></p>
+                <p><span>Pagos Hechos a Prov:</span> <span class="monto-positivo">${formatearMoneda(info.abonado)}</span></p>
+                <div class="saldo-acumulado">
+                    <span>Nuestra Deuda con Proveedor:</span>
                     <span class="${saldoTotalPendiente <= 0 ? 'monto-positivo' : 'monto-negativo'}">
                         ${formatearMoneda(saldoTotalPendiente)}
                     </span>
@@ -444,11 +511,32 @@
     }
 
     function actualizarVistasTablas() {
-        localStorage.setItem('movimientos_multinegocio_v9_fija', JSON.stringify(movimientos));
+        localStorage.setItem(CLAVE_A, JSON.stringify(movimientos));
+        localStorage.setItem(CLAVE_B, JSON.stringify(movimientos));
+        
         calcularSaldosYTotales();
         renderizarResumenClientesAcumulado();
+        renderizarResumenProveedoresAcumulado();
 
         document.querySelectorAll('.vista-seccion').forEach(v => v.classList.remove('vista-activa'));
+
+        // REGLAS INTELIGENTES DE SEPARACIÓN:
+        if (filtroActual === 'Carne') {
+            if (subTabCarneActual === 'cliente') {
+                bloqueClientes.style.display = 'block';
+                bloqueProveedores.style.display = 'none';
+            } else if (subTabCarneActual === 'proveedor') {
+                bloqueClientes.style.display = 'none';
+                bloqueProveedores.style.display = 'block';
+            } else { // Inventario
+                bloqueClientes.style.display = 'none';
+                bloqueProveedores.style.display = 'none';
+            }
+        } else {
+            // En vista "Todos" o fuera de Carne se ven los dos bloques ordenados por categoría
+            bloqueClientes.style.display = 'block';
+            bloqueProveedores.style.display = 'block';
+        }
 
         if (filtroActual === 'Todos') {
             document.getElementById('vista-general').classList.add('vista-activa');
