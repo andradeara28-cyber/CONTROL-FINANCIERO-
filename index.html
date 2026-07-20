@@ -225,7 +225,7 @@
         </div>
     </div>
 
-    <!-- SECCIÓN DE RESUMEN GLOBAL FIJA (SIEMPRE VISIBLE AL FINAL) -->
+    <!-- SECCIÓN DE RESUMEN GLOBAL FIJA -->
     <hr style="margin-top: 40px; border: 0; border-top: 2px dashed #bdc3c7;">
     <h2>📊 Estado de Cuentas Acumuladas (Totales por Cliente)</h2>
     <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
@@ -243,11 +243,19 @@
     const camposDinamicos = document.getElementById('campos-dinamicos-contenedor');
     const pestanasCarne = document.getElementById('pestanas-carne');
 
+    // Nueva función para dar formato de moneda con comas
+    function formatearMoneda(valor) {
+        return new Intl.NumberFormat('es-MX', {
+            style: 'currency',
+            currency: 'MXN',
+            minimumFractionDigits: 2
+        }).format(valor);
+    }
+
     function ajustarCamposFormulario() {
         const area = selectNegocio.value;
         if (area === 'Carne') {
             if (subTabCarneActual === 'cliente') {
-                // Obtener el tipo de registro (Venta o Abono Puro) para ocultar campos
                 const tipoRegistro = document.getElementById('c_tipo_registro')?.value || 'venta';
                 
                 let htmlCampos = `
@@ -272,7 +280,6 @@
                         <input type="number" id="c_abono" placeholder="Abono ($)" min="0" step="0.01" value="0" required>
                     `;
                 } else {
-                    // Si es "Solo Abono", quitamos Peso y Precio, y el monto va directo a un solo campo de Abono Obligatorio
                     htmlCampos += `
                         <input type="number" id="c_abono" placeholder="Monto del Abono ($)" min="0.01" step="0.01" required>
                     `;
@@ -377,13 +384,13 @@
             }
         });
 
-        document.getElementById('saldo-carne').innerText = `$${saldos.Carne.toFixed(2)}`;
-        document.getElementById('saldo-forrajera').innerText = `$${saldos.Forrajera.toFixed(2)}`;
-        document.getElementById('saldo-tuna').innerText = `$${saldos.Tuna.toFixed(2)}`;
-        document.getElementById('saldo-xoconostle').innerText = `$${saldos.Xoconostle.toFixed(2)}`;
+        document.getElementById('saldo-carne').innerText = formatearMoneda(saldos.Carne);
+        document.getElementById('saldo-forrajera').innerText = formatearMoneda(saldos.Forrajera);
+        document.getElementById('saldo-tuna').innerText = formatearMoneda(saldos.Tuna);
+        document.getElementById('saldo-xoconostle').innerText = formatearMoneda(saldos.Xoconostle);
         
         const bg = document.getElementById('balance-general');
-        bg.innerText = `$${totalGeneral.toFixed(2)}`;
+        bg.innerText = formatearMoneda(totalGeneral);
         bg.className = totalGeneral >= 0 ? 'monto-positivo' : 'monto-negativo';
     }
 
@@ -423,12 +430,12 @@
 
             div.innerHTML = `
                 <h4>👤 ${nombre}</h4>
-                <p><span>Total Comprado:</span> <span>$${info.comprado.toFixed(2)}</span></p>
-                <p><span>Total Abonado:</span> <span class="monto-positivo">$${info.abonado.toFixed(2)}</span></p>
+                <p><span>Total Comprado:</span> <span>${formatearMoneda(info.comprado)}</span></p>
+                <p><span>Total Abonado:</span> <span class="monto-positivo">${formatearMoneda(info.abonado)}</span></p>
                 <div class="saldo-acumulado">
                     <span>Deuda Acumulada Actual:</span>
                     <span class="${saldoTotalPendiente <= 0 ? 'monto-positivo' : 'monto-negativo'}">
-                        $${saldoTotalPendiente.toFixed(2)}
+                        ${formatearMoneda(saldoTotalPendiente)}
                     </span>
                 </div>
             `;
@@ -472,10 +479,7 @@
         movimientos.forEach((mov, idx) => {
             const tr = document.createElement('tr');
             let itemCliente = mov.cliente || mov.proveedor || '-';
-            
-            // Para la vista general, si fue un abono puro mostramos el abono, si no, el monto calculado de la nota
             let monto = (mov.negocio === 'Carne' && mov.isAbonoPuro) ? parseFloat(mov.abono || 0) : parseFloat(mov.montoCalculado || mov.monto || 0);
-            
             let tipoLabel = mov.subTipo ? (mov.subTipo === 'cliente' ? (mov.isAbonoPuro ? 'Abono' : 'Cliente') : 'Proveedor') : (mov.tipo || 'Ingreso');
             tr.innerHTML = `
                 <td>${formatearFecha(mov.fecha)}</td>
@@ -484,7 +488,7 @@
                 <td><span class="badge badge-pago">${tipoLabel}</span></td>
                 <td><span class="badge badge-pago">${mov.metodoPago || 'Efectivo'}</span></td>
                 <td>${mov.concepto || '-'}</td>
-                <td class="monto-positivo">$${monto.toFixed(2)}</td>
+                <td class="monto-positivo">${formatearMoneda(monto)}</td>
                 <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">🗑️</button></td>
             `;
             tbody.appendChild(tr);
@@ -503,13 +507,13 @@
             tr.innerHTML = `
                 <td>${formatearFecha(mov.fecha)}</td>
                 <td>${mov.concepto}</td>
-                <td class="${mov.tipo === 'Ingreso' ? 'monto-ingreso' : 'monto-egreso'}">$${m.toFixed(2)}</td>
+                <td class="${mov.tipo === 'Ingreso' ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(m)}</td>
                 <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">Eliminar</button></td>
             `;
             if (mov.tipo === 'Ingreso') { ent.appendChild(tr); saldoF += m; }
             else { sal.appendChild(tr); saldoF -= m; }
         });
-        document.getElementById('saldo-final-forrajera').innerText = `$${saldoF.toFixed(2)}`;
+        document.getElementById('saldo-final-forrajera').innerText = formatearMoneda(saldoF);
     }
 
     function renderizarCarneCliente() {
@@ -522,9 +526,8 @@
             let abono = parseFloat(mov.abono || 0);
             let saldo = total - abono;
             
-            // Ajuste visual si es abono puro (sin mercancía)
             let pesoDisplay = mov.isAbonoPuro ? '-' : `${parseFloat(mov.peso || 0).toFixed(3)} KG`;
-            let precioDisplay = mov.isAbonoPuro ? '-' : `$${parseFloat(mov.precio || 0).toFixed(2)}`;
+            let precioDisplay = mov.isAbonoPuro ? '-' : formatearMoneda(parseFloat(mov.precio || 0));
 
             tr.innerHTML = `
                 <td>${formatearFecha(mov.fecha)}</td>
@@ -533,9 +536,9 @@
                 <td>${mov.concepto}</td>
                 <td>${pesoDisplay}</td>
                 <td>${precioDisplay}</td>
-                <td style="font-weight:bold; color:#2c3e50;">$${total.toFixed(2)}</td>
-                <td class="monto-ingreso">$${abono.toFixed(2)}</td>
-                <td class="${saldo <= 0 ? 'monto-ingreso' : 'monto-egreso'}">$${saldo.toFixed(2)}</td>
+                <td style="font-weight:bold; color:#2c3e50;">${formatearMoneda(total)}</td>
+                <td class="monto-ingreso">${formatearMoneda(abono)}</td>
+                <td class="${saldo <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldo)}</td>
                 <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">Eliminar</button></td>
             `;
             tbody.appendChild(tr);
@@ -556,10 +559,10 @@
                 <td>${mov.proveedor}</td>
                 <td>#${mov.numeroNota}</td>
                 <td>${parseFloat(mov.kilos || 0).toFixed(3)} KG</td>
-                <td>$${parseFloat(mov.precio || 0).toFixed(2)}</td>
-                <td style="font-weight:bold;">$${importe.toFixed(2)}</td>
-                <td class="monto-ingreso">$${abono.toFixed(2)}</td>
-                <td class="monto-egreso">$${saldo.toFixed(2)}</td>
+                <td>${formatearMoneda(parseFloat(mov.precio || 0))}</td>
+                <td style="font-weight:bold;">${formatearMoneda(importe)}</td>
+                <td class="monto-ingreso">${formatearMoneda(abono)}</td>
+                <td class="monto-egreso">${formatearMoneda(saldo)}</td>
                 <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">Eliminar</button></td>
             `;
             tbody.appendChild(tr);
@@ -577,7 +580,7 @@
                 <td>${mov.cliente}</td>
                 <td><span class="badge badge-pago">${mov.metodoPago}</span></td>
                 <td>${mov.concepto}</td>
-                <td class="monto-ingreso">$${parseFloat(mov.monto).toFixed(2)}</td>
+                <td class="monto-ingreso">${formatearMoneda(parseFloat(mov.monto))}</td>
                 <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">Eliminar</button></td>
             `;
             tbody.appendChild(tr);
@@ -606,10 +609,9 @@
                     nuevoMov.abono = parseFloat(document.getElementById('c_abono').value || 0);
                     nuevoMov.isAbonoPuro = false;
                 } else {
-                    // Es un Abono Puro
                     nuevoMov.peso = 0;
                     nuevoMov.precio = 0;
-                    nuevoMov.montoCalculado = 0; // No añade deuda de mercancía
+                    nuevoMov.montoCalculado = 0;
                     nuevoMov.abono = parseFloat(document.getElementById('c_abono').value || 0);
                     nuevoMov.isAbonoPuro = true;
                 }
