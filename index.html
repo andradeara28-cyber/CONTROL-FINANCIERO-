@@ -243,13 +243,13 @@
     const camposDinamicos = document.getElementById('campos-dinamicos-contenedor');
     const pestanasCarne = document.getElementById('pestanas-carne');
 
-    // Nueva función para dar formato de moneda con comas
+    // Función corregida con candado estricto para forzar la separación por comas (17,000.00)
     function formatearMoneda(valor) {
-        return new Intl.NumberFormat('es-MX', {
+        return new Intl.NumberFormat('en-US', {
             style: 'currency',
-            currency: 'MXN',
+            currency: 'USD',
             minimumFractionDigits: 2
-        }).format(valor);
+        }).format(valor).replace('$', '$');
     }
 
     function ajustarCamposFormulario() {
@@ -551,16 +551,16 @@
         movimientos.forEach((mov, idx) => {
             if (mov.negocio !== 'Carne' || mov.subTipo !== 'proveedor') return;
             const tr = document.createElement('tr');
-            let importe = parseFloat(mov.montoCalculado || 0);
+            let Durango = parseFloat(mov.montoCalculado || 0);
             let abono = parseFloat(mov.abono || 0);
-            let saldo = importe - abono;
+            let saldo = Durango - abono;
             tr.innerHTML = `
                 <td>${formatearFecha(mov.fecha)}</td>
                 <td>${mov.proveedor}</td>
                 <td>#${mov.numeroNota}</td>
                 <td>${parseFloat(mov.kilos || 0).toFixed(3)} KG</td>
                 <td>${formatearMoneda(parseFloat(mov.precio || 0))}</td>
-                <td style="font-weight:bold;">${formatearMoneda(importe)}</td>
+                <td style="font-weight:bold;">${formatearMoneda(Durango)}</td>
                 <td class="monto-ingreso">${formatearMoneda(abono)}</td>
                 <td class="monto-egreso">${formatearMoneda(saldo)}</td>
                 <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">Eliminar</button></td>
