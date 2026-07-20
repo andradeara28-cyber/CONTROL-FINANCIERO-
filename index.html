@@ -27,9 +27,9 @@
         .tab-btn { padding: 10px 20px; border: none; background: #e0e6ed; color: #34495e; font-weight: bold; border-radius: 6px; cursor: pointer; }
         .tab-btn.active-tab { background: #e67e22; color: white; }
         
-        /* Resumen de cuentas por cliente único */
-        .contenedor-resumen-clientes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .tarjeta-cliente { background: #fdfefe; border: 1px solid #d5dbdb; border-top: 4px solid #3498db; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        /* Resumen de deudas global (Fijo) */
+        .contenedor-resumen-clientes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
+        .tarjeta-cliente { background: #fdfefe; border: 1px solid #d5dbdb; border-top: 4px solid #e74c3c; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .tarjeta-cliente h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; border-bottom: 1px dashed #e5e7e9; padding-bottom: 5px; text-transform: uppercase; }
         .tarjeta-cliente p { margin: 5px 0; font-size: 13px; color: #566573; display: flex; justify-content: space-between; }
         .tarjeta-cliente .saldo-acumulado { font-size: 15px; font-weight: bold; margin-top: 10px; padding-top: 5px; border-top: 1px solid #eaeded; }
@@ -114,14 +114,7 @@
         <button type="submit">Registrar</button>
     </form>
 
-    <!-- SECCIÓN DINÁMICA: CUENTAS GLOBALES DE CLIENTES CARNE -->
-    <div id="seccion-resumen-carne-clientes" style="display:none;">
-        <h3>📊 Estado de Cuentas Acumuladas (Totales por Cliente)</h3>
-        <div class="contenedor-resumen-clientes" id="lista-resumen-clientes">
-            <!-- Se llena automáticamente con JavaScript -->
-        </div>
-    </div>
-
+    <!-- VISTAS DE TABLAS -->
     <!-- GENERAL -->
     <div id="vista-general" class="vista-seccion vista-activa">
         <h2>Historial General de Movimientos</h2>
@@ -231,11 +224,19 @@
             </table>
         </div>
     </div>
+
+    <!-- SECCIÓN DE RESUMEN GLOBAL FIJA (SIEMPRE VISIBLE AL FINAL) -->
+    <hr style="margin-top: 40px; border: 0; border-top: 2px dashed #bdc3c7;">
+    <h2>📊 Cuentas Globales por Cobrar (Clientes Carne)</h2>
+    <div class="contenedor-resumen-clientes" id="lista-resumen-clientes">
+        <!-- Se llena automáticamente en tiempo real -->
+    </div>
+
 </div>
 
 <script>
-    // Saltamos a la versión v9 para albergar la inteligencia de agrupación de cuentas acumuladas
-    let movimientos = JSON.parse(localStorage.getItem('movimientos_multinegocio_v9')) || [];
+    // Nueva versión v9_fija para evitar conflictos de bases de datos
+    let movimientos = JSON.parse(localStorage.getItem('movimientos_multinegocio_v9_fija')) || [];
     let filtroActual = 'Todos';
     let subTabCarneActual = 'cliente';
 
@@ -244,7 +245,6 @@
     const selectNegocio = document.getElementById('negocio');
     const camposDinamicos = document.getElementById('campos-dinamicos-contenedor');
     const pestanasCarne = document.getElementById('pestanas-carne');
-    const seccionResumenClientes = document.getElementById('seccion-resumen-carne-clientes');
 
     function ajustarCamposFormulario() {
         const area = selectNegocio.value;
@@ -309,14 +309,6 @@
         subTabCarneActual = subTab;
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-tab'));
         document.getElementById(`btn-sub-${subTab}`).classList.add('active-tab');
-        
-        // Mostrar la barra de saldos únicos acumulados SOLAMENTE en la pestaña de Cliente Carne
-        if (filtroActual === 'Carne' && subTabCarneActual === 'cliente') {
-            seccionResumenClientes.style.display = 'block';
-        } else {
-            seccionResumenClientes.style.display = 'none';
-        }
-
         ajustarCamposFormulario();
         actualizarVistasTablas();
     }
@@ -325,15 +317,7 @@
         filtroActual = area;
         document.querySelectorAll('.dash-card').forEach(card => card.classList.remove('active-filter'));
         document.getElementById(`card-${area}`).classList.add('active-filter');
-        
         pestanasCarne.style.display = (area === 'Carne') ? 'flex' : 'none';
-        
-        if (area === 'Carne' && subTabCarneActual === 'cliente') {
-            seccionResumenClientes.style.display = 'block';
-        } else {
-            seccionResumenClientes.style.display = 'none';
-        }
-
         actualizarVistasTablas();
     }
 
@@ -352,7 +336,6 @@
         return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : f;
     }
 
-    // Calcula caja real y actualiza las tarjetas del dashboard
     function calcularSaldosYTotales() {
         let saldos = { Carne: 0, Forrajera: 0, Tuna: 0, Xoconostle: 0 };
         let totalGeneral = 0;
@@ -388,7 +371,7 @@
         bg.className = totalGeneral >= 0 ? 'monto-positivo' : 'monto-negativo';
     }
 
-    // AGRUPACIÓN INTELIGENTE: Suma compras y abonos históricos de cada cliente único
+    // FUNCIÓN GLOBAL: Genera las tarjetas acumuladas fijas abajo
     function renderizarResumenClientesAcumulado() {
         const contenedor = document.getElementById('lista-resumen-clientes');
         contenedor.innerHTML = '';
@@ -411,7 +394,7 @@
 
         const listaNombres = Object.keys(cuentasClientes);
         if (listaNombres.length === 0) {
-            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; grid-column: 1/-1; text-align:center;">Sin deudas o clientes registrados todavía.</p>`;
+            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">Sin deudas o clientes registrados todavía.</p>`;
             return;
         }
 
@@ -421,16 +404,15 @@
 
             const div = document.createElement('div');
             div.className = 'tarjeta-cliente';
-            // Cambia el color del borde de la tarjeta si ya liquidó o si aún debe dinero
             div.style.borderTopColor = saldoTotalPendiente <= 0 ? '#2ecc71' : '#e74c3c';
 
             div.innerHTML = `
                 <h4>👤 ${nombre}</h4>
-                <p><span>Total Comprado:</span> <span>$${info.comprado.toFixed(2)}</span></p>
-                <p><span>Total Abonado:</span> <span class="monto-positivo">$${info.abonado.toFixed(2)}</span></p>
+                <p><span>Total Comprado (Mercancía):</span> <span>$${info.comprado.toFixed(2)}</span></p>
+                <p><span>Total Abonado (Pagos):</span> <span class="monto-positivo">$${info.abonado.toFixed(2)}</span></p>
                 <div class="saldo-acumulado">
-                    <span>Deuda Acumulada Actual:</span>
-                    <span class="${saldoTotalPendiente <= 0 ? 'monto-positivo' : 'monto-negativo'}">
+                    <span>Deuda Total a la Fecha:</span>
+                    <span class="${saldoTotalPendiente <= 0 ? 'monto-positivo' : 'monto-negativo'}" style="font-size: 18px;">
                         $${saldoTotalPendiente.toFixed(2)}
                     </span>
                 </div>
@@ -440,12 +422,11 @@
     }
 
     function actualizarVistasTablas() {
-        localStorage.setItem('movimientos_multinegocio_v9', JSON.stringify(movimientos));
+        localStorage.setItem('movimientos_multinegocio_v9_fija', JSON.stringify(movimientos));
         calcularSaldosYTotales();
         
-        if (filtroActual === 'Carne' && subTabCarneActual === 'cliente') {
-            renderizarResumenClientesAcumulado();
-        }
+        // Se ejecuta SIEMPRE para mantener al día el saldo acumulado
+        renderizarResumenClientesAcumulado();
 
         document.querySelectorAll('.vista-seccion').forEach(v => v.classList.remove('vista-activa'));
 
@@ -643,8 +624,8 @@
 
     establecerFechaDeHoy();
     selectNegocio.value = "Carne";
-    filtrarPorArea("Carne");
-    cambiarSubTabCarne("cliente");
+    filtrarPorArea("Todos"); // Iniciamos directo en el historial general como en tu captura
+    ajustarCamposFormulario();
 </script>
 
 </body>
