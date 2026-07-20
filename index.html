@@ -6,7 +6,7 @@
     <title>Control Financiero Avanzado - Multinegocio</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .container { max-width: 1300px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
         h2 { color: #2c3e50; border-bottom: 2px solid #e1e8ed; padding-bottom: 8px; margin-top: 30px; }
         
@@ -27,10 +27,14 @@
         .card-total.active-filter { background: #1a252f; border-bottom: 4px solid #3498db; }
         
         /* Formulario */
-        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 30px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; }
+        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 30px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; align-items: center; }
         input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; width: 100%; }
         button { background-color: #2c3e50; color: white; border: none; cursor: pointer; font-weight: bold; transition: background 0.2s; }
         button:hover { background-color: #1a252f; }
+        
+        /* Contenedor específico para resaltar el peso cuando se activa */
+        .campo-peso { transition: all 0.3s ease; }
+        .campo-peso.oculto { opacity: 0.4; pointer-events: none; }
         
         /* Tabla */
         .table-responsive { overflow-x: auto; }
@@ -48,6 +52,7 @@
         .badge-egreso { background: #fdedec; color: #e74c3c; }
         .badge-negocio { background: #eaf2f8; color: #2980b9; }
         .badge-pago { background: #f4f6f9; color: #566573; border: 1px solid #d5dbdb; }
+        .badge-peso { background: #f5eeeb; color: #e67e22; border: 1px solid #f5cba7; }
         
         .monto-ingreso { color: #2ecc71; font-weight: bold; }
         .monto-egreso { color: #e74c3c; font-weight: bold; }
@@ -93,7 +98,7 @@
         
         <input type="text" id="cliente" placeholder="Nombre del Cliente" required>
         
-        <select id="negocio" required>
+        <select id="negocio" onchange="verificarAreaCarne()" required>
             <option value="" disabled selected>Selecciona el Negocio</option>
             <option value="Carne">🥩 Carne</option>
             <option value="Forrajera">🌾 Forrajera</option>
@@ -101,20 +106,24 @@
             <option value="Xoconostle">🔴 Xoconostle</option>
         </select>
 
+        <div id="wrapper-peso" class="campo-peso oculto">
+            <input type="number" id="peso" placeholder="Peso (KG)" min="0.001" step="0.001" disabled>
+        </div>
+
         <select id="tipo" required>
             <option value="Ingreso">Ingreso</option>
             <option value="Egreso">Egreso</option>
         </select>
 
         <select id="metodoPago" required>
-            <option value="" disabled selected>Método de Pago</option>
+            <option value="" disabled selected>Forma de Pago</option>
             <option value="Efectivo">💵 Efectivo</option>
             <option value="Transferencia">📱 Transferencia</option>
             <option value="Tarjeta">💳 Tarjeta</option>
         </select>
         
-        <input type="number" id="monto" placeholder="Monto ($)" min="0.01" step="0.01" required>
-        <input type="text" id="concepto" placeholder="Concepto / Detalles" required>
+        <input type="number" id="monto" placeholder="Total ($)" min="0.01" step="0.01" required>
+        <input type="text" id="concepto" placeholder="Detalle (Ej: Pierna, lomo)" required>
         <button type="submit">Registrar</button>
     </form>
 
@@ -126,12 +135,13 @@
             <thead>
                 <tr>
                     <th>Fecha</th>
-                    <th>Cliente</th>
-                    <th>Negocio</th>
+                    <th>Cliente / Proveedor</th>
+                    <th>Área</th>
+                    <th>Peso (KG)</th>
                     <th>Tipo</th>
-                    <th>Método Pago</th>
-                    <th>Concepto</th>
-                    <th>Monto</th>
+                    <th>Forma de Pago</th>
+                    <th>Concepto Detalle</th>
+                    <th>Total Saldo</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -143,12 +153,29 @@
 </div>
 
 <script>
-    let movimientos = JSON.parse(localStorage.getItem('movimientos_multinegocio_v3')) || [];
+    let movimientos = JSON.parse(localStorage.getItem('movimientos_multinegocio_v4')) || [];
     let filtroActual = 'Todos';
 
     const form = document.getElementById('registro-form');
     const tablaCuerpo = document.getElementById('tabla-cuerpo');
     const inputFecha = document.getElementById('fecha');
+    const selectNegocio = document.getElementById('negocio');
+    const inputPeso = document.getElementById('peso');
+    const wrapperPeso = document.getElementById('wrapper-peso');
+
+    // Habilita o deshabilita el campo de KG dependiendo del área seleccionada
+    function verificarAreaCarne() {
+        if (selectNegocio.value === 'Carne') {
+            wrapperPeso.classList.remove('oculto');
+            inputPeso.disabled = false;
+            inputPeso.required = true;
+        } else {
+            wrapperPeso.classList.add('oculto');
+            inputPeso.disabled = true;
+            inputPeso.required = false;
+            inputPeso.value = ''; // Limpiar si había algo escrito
+        }
+    }
 
     // Poner la fecha de hoy automáticamente en el formulario
     function establecerFechaDeHoy() {
@@ -207,7 +234,6 @@
     function renderizarTabla() {
         tablaCuerpo.innerHTML = '';
         
-        // Filtrar movimientos según la tarjeta seleccionada
         const movimientosFiltrados = movimientos.filter(mov => {
             if (filtroActual === 'Todos') return true;
             return mov.negocio === filtroActual;
@@ -219,11 +245,15 @@
             const indiceReal = movimientos.indexOf(mov);
             const montoNum = parseFloat(mov.monto);
 
+            // Si tiene peso registrado lo muestra con formato KG, si no pone un guión (-)
+            const pesoTexto = mov.peso ? `<span class="badge badge-peso">⚖️ ${parseFloat(mov.peso).toFixed(3)} KG</span>` : '-';
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${formatearFechaVista(mov.fecha)}</td>
                 <td><strong>${mov.cliente}</strong></td>
                 <td><span class="badge badge-negocio">${obtenerEmojiNegocio(mov.negocio)} ${mov.negocio}</span></td>
+                <td>${pesoTexto}</td>
                 <td><span class="badge ${mov.tipo === 'Ingreso' ? 'badge-ingreso' : 'badge-egreso'}">${mov.tipo}</span></td>
                 <td><span class="badge badge-pago">${obtenerEmojiPago(mov.metodoPago)} ${mov.metodoPago}</span></td>
                 <td>${mov.concepto}</td>
@@ -235,11 +265,10 @@
             tablaCuerpo.appendChild(tr);
         });
 
-        localStorage.setItem('movimientos_multinegocio_v3', JSON.stringify(movimientos));
+        localStorage.setItem('movimientos_multinegocio_v4', JSON.stringify(movimientos));
     }
 
     function ajustarOrdenFechas() {
-        // Ordena los movimientos del más reciente al más antiguo por fecha
         movimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     }
 
@@ -276,7 +305,8 @@
         const nuevoMovimiento = {
             fecha: inputFecha.value,
             cliente: document.getElementById('cliente').value.toUpperCase(),
-            negocio: document.getElementById('negocio').value,
+            negocio: selectNegocio.value,
+            peso: selectNegocio.value === 'Carne' ? inputPeso.value : '', // Solo guarda peso si es Carne
             tipo: document.getElementById('tipo').value,
             metodoPago: document.getElementById('metodoPago').value,
             monto: document.getElementById('monto').value,
@@ -288,7 +318,8 @@
         calcularSaldos();
         renderizarTabla();
         form.reset();
-        establecerFechaDeHoy(); // Volver a poner la fecha de hoy tras limpiar
+        establecerFechaDeHoy(); 
+        verificarAreaCarne(); // Resetea el estado del campo peso
     });
 
     function eliminarMovimiento(index) {
