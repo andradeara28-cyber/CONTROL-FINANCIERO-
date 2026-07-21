@@ -24,12 +24,18 @@
         .dash-card h3 { margin: 0; color: #7f8c8d; font-size: 13px; text-transform: uppercase; }
         .dash-card p { margin: 8px 0 0 0; font-size: 20px; font-weight: bold; }
 
+        /* Tarjetas de Resumen Local (Forrajera) */
+        .resumen-forrajera-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .card-resumen-sm { background: #fdfefe; border: 1px solid #d5dbdb; padding: 15px; border-radius: 8px; text-align: center; }
+        .card-resumen-sm h4 { margin: 0; font-size: 13px; color: #7f8c8d; text-transform: uppercase; }
+        .card-resumen-sm p { margin: 5px 0 0 0; font-size: 18px; font-weight: bold; }
+
         /* Pestañas de Carne */
         .sub-tabs-carne { display: none; gap: 10px; margin-bottom: 25px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e1e8ed; }
         .tab-btn { padding: 10px 20px; border: none; background: #e0e6ed; color: #34495e; font-weight: bold; border-radius: 6px; cursor: pointer; flex: 1; text-align: center; }
         .tab-btn.active-tab { background: #e67e22; color: white; }
         
-        /* Resumen de deudas global */
+        /* Resumen de deudas global y por cliente */
         .contenedor-resumen-clientes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
         .tarjeta-cliente { background: #fdfefe; border: 1px solid #d5dbdb; border-top: 4px solid #e74c3c; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .tarjeta-cliente h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; border-bottom: 1px dashed #e5e7e9; padding-bottom: 5px; text-transform: uppercase; }
@@ -160,26 +166,46 @@
         </div>
     </div>
 
-    <!-- FORRAJERA -->
+    <!-- FORRAJERA RENOVADA -->
     <div id="vista-forrajera" class="vista-seccion">
         <h2>Control de Forrajera 🌾</h2>
-        <h3>📥 ENTRADAS</h3>
+        
+        <div class="resumen-forrajera-grid">
+            <div class="card-resumen-sm" style="border-top: 4px solid #2ecc71;">
+                <h4>📥 Total Entradas (Ventas)</h4>
+                <p id="forrajera-total-entradas" class="monto-ingreso">$0.00</p>
+            </div>
+            <div class="card-resumen-sm" style="border-top: 4px solid #e74c3c;">
+                <h4>📤 Total Salidas (Gastos)</h4>
+                <p id="forrajera-total-salidas" class="monto-egreso">$0.00</p>
+            </div>
+            <div class="card-resumen-sm" style="border-top: 4px solid #f1c40f;">
+                <h4>💵 Balance Forrajera</h4>
+                <p id="saldo-final-forrajera">$0.00</p>
+            </div>
+        </div>
+
+        <h3>📋 Movimientos de Forrajera</h3>
         <div class="table-responsive">
             <table>
-                <thead><tr><th>Fecha</th><th>Concepto</th><th>Total</th><th>Acciones</th></tr></thead>
-                <tbody id="forrajera-entradas"></tbody>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Cliente / Proveedor</th>
+                        <th>Concepto</th>
+                        <th>Cantidad</th>
+                        <th>Precio ($)</th>
+                        <th>Total</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="forrajera-movimientos-cuerpo"></tbody>
             </table>
         </div>
-        <h3>📤 SALIDAS</h3>
-        <div class="table-responsive">
-            <table>
-                <thead><tr><th>Fecha</th><th>Concepto</th><th>Total</th><th>Acciones</th></tr></thead>
-                <tbody id="forrajera-salidas"></tbody>
-            </table>
-        </div>
-        <div class="seccion-saldo-final" style="border-right: 6px solid #f1c40f;">
-            Saldo Total Forrajera: <span id="saldo-final-forrajera">$0.00</span>
-        </div>
+
+        <h3>📊 Total Acumulado por Cliente (Forrajera)</h3>
+        <div class="contenedor-resumen-clientes" id="lista-resumen-forrajera-clientes"></div>
     </div>
 
     <!-- CARNE CLIENTE -->
@@ -225,10 +251,9 @@
         </div>
     </div>
 
-    <!-- SECCIÓN DE RESUMEN INTELIGENTE POR SEPARADO -->
-    <hr style="margin-top: 40px; border: 0; border-top: 2px dashed #bdc3c7;">
-    
+    <!-- SECCIÓN DE RESUMEN CARNE DEUDAS -->
     <div id="bloque-resumen-clientes">
+        <hr style="margin-top: 40px; border: 0; border-top: 2px dashed #bdc3c7;">
         <h2>📊 Estado de Cuentas Acumuladas (Totales por Cliente Carne)</h2>
         <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
     </div>
@@ -302,21 +327,14 @@
             }
         } else if (area === 'Forrajera') {
             camposDinamicos.innerHTML = `
-                <select id="f_clasificacion" required>
-                    <option value="" disabled selected>Clasificación</option>
-                    <option value="REVOLTURA">🔄 REVOLTURA</option>
-                    <option value="INVERSION">📈 INVERSION</option>
-                </select>
                 <select id="f_tipo" required>
-                    <option value="Ingreso">Ingreso (Entrada)</option>
-                    <option value="Egreso">Egreso (Salida)</option>
+                    <option value="Ingreso">📥 Entrada (Venta)</option>
+                    <option value="Egreso">📤 Salida (Gasto)</option>
                 </select>
-                <select id="f_pago" required>
-                    <option value="Efectivo">💵 Efectivo</option>
-                    <option value="Transferencia">📱 Transferencia</option>
-                </select>
-                <input type="number" id="f_monto" placeholder="Total ($)" min="0.01" step="0.01" required>
+                <input type="text" id="f_cliente" placeholder="Nombre Cliente / Proveedor" required>
                 <input type="text" id="f_concepto" placeholder="Concepto Detalle" required>
+                <input type="number" id="f_cantidad" placeholder="Cantidad" min="0.01" step="0.01" required>
+                <input type="number" id="f_precio" placeholder="Precio ($)" min="0.01" step="0.01" required>
             `;
         } else {
             camposDinamicos.innerHTML = `
@@ -451,13 +469,9 @@
         document.querySelectorAll('.vista-seccion').forEach(v => v.classList.remove('vista-activa'));
 
         if (filtroActual === 'Carne') {
-            if (subTabCarneActual === 'cliente') {
-                bloqueClientes.style.display = 'block';
-            } else {
-                bloqueClientes.style.display = 'none';
-            }
+            bloqueClientes.style.display = (subTabCarneActual === 'cliente') ? 'block' : 'none';
         } else {
-            bloqueClientes.style.display = 'block';
+            bloqueClientes.style.display = 'none';
         }
 
         if (filtroActual === 'Todos') {
@@ -503,24 +517,71 @@
     }
 
     function renderizarForrajera() {
-        const ent = document.getElementById('forrajera-entradas');
-        const sal = document.getElementById('forrajera-salidas');
-        ent.innerHTML = ''; sal.innerHTML = '';
-        let saldoF = 0;
+        const tbody = document.getElementById('forrajera-movimientos-cuerpo');
+        const contenedorClientes = document.getElementById('lista-resumen-forrajera-clientes');
+        
+        tbody.innerHTML = '';
+        contenedorClientes.innerHTML = '';
+
+        let totalEntradas = 0;
+        let totalSalidas = 0;
+        let acumuladoClientes = {};
+
         movimientos.forEach((mov, idx) => {
             if (mov.negocio !== 'Forrajera') return;
+
             const tr = document.createElement('tr');
-            let m = parseFloat(mov.monto);
+            let m = parseFloat(mov.monto || 0);
+            let cant = parseFloat(mov.cantidad || 0);
+            let precio = parseFloat(mov.precio || 0);
+            let esIngreso = (mov.tipo || 'Ingreso') === 'Ingreso';
+
+            if (esIngreso) {
+                totalEntradas += m;
+                let clienteNom = (mov.cliente || 'VARIOS').toUpperCase().trim();
+                if (!acumuladoClientes[clienteNom]) acumuladoClientes[clienteNom] = 0;
+                acumuladoClientes[clienteNom] += m;
+            } else {
+                totalSalidas += m;
+            }
+
             tr.innerHTML = `
                 <td>${formatearFecha(mov.fecha)}</td>
+                <td><span class="badge ${esIngreso ? 'badge-pago' : 'badge-negocio'}">${esIngreso ? '📥 Entrada' : '📤 Salida'}</span></td>
+                <td><strong>${mov.cliente}</strong></td>
                 <td>${mov.concepto}</td>
-                <td class="${mov.tipo === 'Ingreso' ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(m)}</td>
-                <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">Eliminar</button></td>
+                <td>${cant > 0 ? cant : '-'}</td>
+                <td>${precio > 0 ? formatearMoneda(precio) : '-'}</td>
+                <td class="${esIngreso ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(m)}</td>
+                <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">🗑️</button></td>
             `;
-            if (mov.tipo === 'Ingreso') { ent.appendChild(tr); saldoF += m; }
-            else { sal.appendChild(tr); saldoF -= m; }
+            tbody.appendChild(tr);
         });
-        document.getElementById('saldo-final-forrajera').innerText = formatearMoneda(saldoF);
+
+        document.getElementById('forrajera-total-entradas').innerText = formatearMoneda(totalEntradas);
+        document.getElementById('forrajera-total-salidas').innerText = formatearMoneda(totalSalidas);
+        
+        let balanceNeto = totalEntradas - totalSalidas;
+        const elemBalance = document.getElementById('saldo-final-forrajera');
+        elemBalance.innerText = formatearMoneda(balanceNeto);
+        elemBalance.className = balanceNeto >= 0 ? 'monto-positivo' : 'monto-negativo';
+
+        // Renderizar resumen por cliente
+        const listaClientes = Object.keys(acumuladoClientes);
+        if (listaClientes.length === 0) {
+            contenedorClientes.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">Sin ventas a clientes registradas aún.</p>`;
+        } else {
+            listaClientes.forEach(cli => {
+                const div = document.createElement('div');
+                div.className = 'tarjeta-cliente';
+                div.style.borderTopColor = '#f1c40f';
+                div.innerHTML = `
+                    <h4>🌾 ${cli}</h4>
+                    <p><span>Total Comprado en Forrajera:</span> <span class="monto-positivo">${formatearMoneda(acumuladoClientes[cli])}</span></p>
+                `;
+                contenedorClientes.appendChild(div);
+            });
+        }
     }
 
     function renderizarCarneCliente() {
@@ -546,7 +607,7 @@
                 <td style="font-weight:bold; color:#2c3e50;">${formatearMoneda(total)}</td>
                 <td class="monto-ingreso">${formatearMoneda(abono)}</td>
                 <td class="${saldo <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldo)}</td>
-                <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">Eliminar</button></td>
+                <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">🗑️</button></td>
             `;
             tbody.appendChild(tr);
         });
@@ -564,7 +625,7 @@
                 <td><span class="badge badge-pago">${mov.metodoPago}</span></td>
                 <td>${mov.concepto}</td>
                 <td class="monto-ingreso">${formatearMoneda(parseFloat(mov.monto))}</td>
-                <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">Eliminar</button></td>
+                <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">🗑️</button></td>
             `;
             tbody.appendChild(tr);
         });
@@ -628,14 +689,21 @@
                         agregados++;
                     } 
                     else if (destino === 'Forrajera') {
+                        let cant = parseFloat(rowNorm['cantidad'] || rowNorm['cant'] || 0);
+                        let precio = parseFloat(rowNorm['precio'] || 0);
+                        let total = cant * precio;
+                        if(total === 0) total = parseFloat(rowNorm['monto'] || rowNorm['total'] || 0);
+
                         movimientos.push({
                             fecha: fecha,
                             negocio: 'Forrajera',
-                            cliente: String(rowNorm['clasificacion'] || 'REVOLTURA').toUpperCase(),
+                            cliente: String(rowNorm['cliente'] || rowNorm['nombre'] || 'CLIENTE EXCEL').toUpperCase().trim(),
                             tipo: rowNorm['tipo'] || 'Ingreso',
-                            metodoPago: rowNorm['pago'] || 'Efectivo',
-                            monto: parseFloat(rowNorm['monto'] || rowNorm['total'] || 0),
-                            concepto: String(rowNorm['concepto'] || 'CONCEPTO EXCEL').toUpperCase()
+                            metodoPago: 'Efectivo',
+                            cantidad: cant,
+                            precio: precio,
+                            monto: total,
+                            concepto: String(rowNorm['concepto'] || 'FORRAJERA EXCEL').toUpperCase()
                         });
                         agregados++;
                     }
@@ -697,11 +765,16 @@
                 }
             } else { return; }
         } else if (area === 'Forrajera') {
-            nuevoMov.cliente = document.getElementById('f_clasificacion').value;
+            let cant = parseFloat(document.getElementById('f_cantidad').value || 0);
+            let pr = parseFloat(document.getElementById('f_precio').value || 0);
+            
             nuevoMov.tipo = document.getElementById('f_tipo').value;
-            nuevoMov.metodoPago = document.getElementById('f_pago').value;
-            nuevoMov.monto = document.getElementById('f_monto').value;
+            nuevoMov.cliente = document.getElementById('f_cliente').value.toUpperCase().trim();
             nuevoMov.concepto = document.getElementById('f_concepto').value.toUpperCase();
+            nuevoMov.cantidad = cant;
+            nuevoMov.precio = pr;
+            nuevoMov.monto = cant * pr;
+            nuevoMov.metodoPago = 'Efectivo';
         } else {
             nuevoMov.cliente = document.getElementById('tx_cliente').value.toUpperCase().trim();
             nuevoMov.metodoPago = document.getElementById('tx_pago').value;
