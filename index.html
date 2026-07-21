@@ -785,25 +785,13 @@
 
         movimientos.push(nuevoMov);
         movimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+        
+        // Cambiar la vista de la pantalla al área que se acaba de registrar
+        filtrarPorArea(area);
+
         form.reset();
         selectNegocio.value = area; 
         establecerFechaDeHoy();
         ajustarCamposFormulario();
         actualizarVistasTablas();
     });
-
-    function eliminarMovimiento(idx) {
-        if(confirm('¿Deseas eliminar permanentemente este registro financiero?')) {
-            movimientos.splice(idx, 1);
-            actualizarVistasTablas();
-        }
-    }
-
-    establecerFechaDeHoy();
-    selectNegocio.value = "Carne";
-    filtrarPorArea("Todos");
-    ajustarCamposFormulario();
-</script>
-
-</body>
-</html>
