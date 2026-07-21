@@ -11,7 +11,7 @@
         h1 { text-align: center; color: #2c3e50; margin-bottom: 25px; }
         h2 { color: #2c3e50; border-bottom: 2px solid #e1e8ed; padding-bottom: 8px; margin-top: 30px; }
         
-        /* Dashboard Exclusivo dentro de Pestaña 2 (Inventario Carne) */
+        /* Dashboard Exclusivo dentro de Pestaña 2 (Inventario Global) */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px; margin-top: 15px; }
         .dash-card { background: #eef2f7; padding: 20px; border-radius: 8px; text-align: center; border-left: 5px solid #e67e22; }
         .dash-card.deuda { background: #fdf2e9; border-left-color: #e74c3c; }
@@ -75,12 +75,12 @@
     <!-- PESTAÑAS CARNE -->
     <div class="sub-tabs-carne">
         <button class="tab-btn active-tab" id="btn-sub-cliente" onclick="cambiarSubTabCarne('cliente')">1. Cliente Carne</button>
-        <button class="tab-btn" id="btn-sub-inventario" onclick="cambiarSubTabCarne('inventario')">2. Inventario Carne</button>
+        <button class="tab-btn" id="btn-sub-inventario" onclick="cambiarSubTabCarne('inventario')">2. Inventario Global</button>
     </div>
 
     <!-- IMPORTADOR DE EXCEL -->
-    <h2>📊 Carga desde Excel</h2>
-    <div class="box-excel">
+    <h2 id="titulo-excel">📊 Carga desde Excel</h2>
+    <div class="box-excel" id="contenedor-excel">
         <div style="flex-grow: 1;">
             <strong>¿Tienes un historial previo en Excel?</strong> Cárgalo aquí para sumarlo al sistema automáticamente:
             <input type="file" id="input-excel" accept=".xlsx, .xls, .csv" style="margin-top: 8px; background: white;">
@@ -91,7 +91,7 @@
     </div>
 
     <!-- FORMULARIO MANUAL -->
-    <h2>Registrar Nuevo Movimiento</h2>
+    <h2 id="titulo-registrar">Registrar Nuevo Movimiento</h2>
     <form id="registro-form">
         <input type="date" id="fecha" required>
         <div id="campos-dinamicos-contenedor" style="display: contents;"></div>
@@ -147,7 +147,7 @@
         </div>
     </div>
 
-    <!-- PESTAÑA 2: INVENTARIO CARNE -->
+    <!-- PESTAÑA 2: INVENTARIO GLOBAL -->
     <div id="vista-carne-inventario" class="vista-seccion">
         <h2>Inventario Global 🥩</h2>
 
@@ -198,7 +198,18 @@
     }
 
     function ajustarCamposFormulario() {
+        const formEl = document.getElementById('registro-form');
+        const titRegistrar = document.getElementById('titulo-registrar');
+        const boxExcel = document.getElementById('contenedor-excel');
+        const titExcel = document.getElementById('titulo-excel');
+
         if (subTabCarneActual === 'cliente') {
+            // Mostrar formulario y caja de Excel en Cliente Carne
+            if(formEl) formEl.style.display = 'grid';
+            if(titRegistrar) titRegistrar.style.display = 'block';
+            if(boxExcel) boxExcel.style.display = 'flex';
+            if(titExcel) titExcel.style.display = 'block';
+
             const tipoRegistro = document.getElementById('c_tipo_registro')?.value || 'venta';
             
             let htmlCampos = `
@@ -230,7 +241,13 @@
             camposDinamicos.innerHTML = htmlCampos;
 
         } else {
-            camposDinamicos.innerHTML = `<p style="color: #7f8c8d; font-size: 14px; text-align: center; width: 100%;">Inventario en blanco temporalmente</p>`;
+            // Ocultar formulario y Excel en Inventario Global
+            if(formEl) formEl.style.display = 'none';
+            if(titRegistrar) titRegistrar.style.display = 'none';
+            if(boxExcel) boxExcel.style.display = 'none';
+            if(titExcel) titExcel.style.display = 'none';
+
+            camposDinamicos.innerHTML = '';
         }
     }
 
