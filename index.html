@@ -8,7 +8,7 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1350px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 25px; }
         h2 { color: #2c3e50; border-bottom: 2px solid #e1e8ed; padding-bottom: 8px; margin-top: 30px; }
         
         /* Dashboard Exclusivo dentro de Pestaña 2 (Inventario Carne) */
@@ -69,6 +69,7 @@
 <body>
 
 <div class="container">
+    <!-- SOLO TÍTULO DE ARRIBA -->
     <h1>Control Financiero - Módulo Carne 🥩</h1>
 
     <!-- PESTAÑAS CARNE -->
@@ -150,7 +151,7 @@
     <div id="vista-carne-inventario" class="vista-seccion">
         <h2>Inventario Carne & Resumen de Cuentas 🥩</h2>
 
-        <!-- AMBAS TARJETAS JUNTAS ÚNICAMENTE EN PESTAÑA 2 -->
+        <!-- AMBAS TARJETAS JUNTAS SOLAMENTE DENTRO DE LA PESTAÑA 2 -->
         <div class="dashboard-grid">
             <div class="dash-card">
                 <h3>🥩 TOTAL ABONADO CARNE</h3>
@@ -162,7 +163,7 @@
             </div>
         </div>
 
-        <!-- RESUMEN INDIVIDUAL -->
+        <!-- RESUMEN INDIVIDUAL POR CLIENTE -->
         <div id="bloque-resumen-clientes">
             <h2>📊 Estado de Cuentas Individuales por Cliente</h2>
             <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
@@ -379,7 +380,7 @@
             contenedor.appendChild(div);
         });
 
-        // Asignar el total acumulado de deudas a la tarjeta
+        // Cargar valor en tarjeta de Deuda
         campoDeudaTotal.innerText = formatearMoneda(sumaDeudasGlobal);
 
         if (listaNombres.length === 0) {
