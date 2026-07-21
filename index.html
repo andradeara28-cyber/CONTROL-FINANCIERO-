@@ -69,7 +69,6 @@
         .monto-positivo { color: #2ecc71; font-weight: bold; }
         .monto-negativo { color: #e74c3c; font-weight: bold; }
         .btn-borrar { background: none; color: #e74c3c; border: none; cursor: pointer; padding: 0; font-size: 14px; }
-        .seccion-saldo-final { font-size: 20px; font-weight: bold; text-align: right; margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -786,7 +785,6 @@
         movimientos.push(nuevoMov);
         movimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
         
-        // Cambiar la vista de la pantalla al área que se acaba de registrar
         filtrarPorArea(area);
 
         form.reset();
@@ -795,3 +793,19 @@
         ajustarCamposFormulario();
         actualizarVistasTablas();
     });
+
+    function eliminarMovimiento(idx) {
+        if(confirm('¿Deseas eliminar permanentemente este registro financiero?')) {
+            movimientos.splice(idx, 1);
+            actualizarVistasTablas();
+        }
+    }
+
+    establecerFechaDeHoy();
+    selectNegocio.value = "Carne";
+    filtrarPorArea("Todos");
+    ajustarCamposFormulario();
+</script>
+
+</body>
+</html>
