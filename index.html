@@ -14,8 +14,9 @@
         /* Dashboard */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
         .dash-card { background: #eef2f7; padding: 15px; border-radius: 8px; text-align: center; border-left: 5px solid #e67e22; }
+        .dash-card.deuda-card { border-left-color: #e74c3c; background: #fdf2e9; }
         .dash-card h3 { margin: 0; color: #7f8c8d; font-size: 13px; text-transform: uppercase; }
-        .dash-card p { margin: 8px 0 0 0; font-size: 20px; font-weight: bold; }
+        .dash-card p { margin: 8px 0 0 0; font-size: 22px; font-weight: bold; }
 
         /* Pestañas de Carne */
         .sub-tabs-carne { display: flex; gap: 10px; margin-bottom: 25px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e1e8ed; }
@@ -23,11 +24,15 @@
         .tab-btn.active-tab { background: #e67e22; color: white; }
         
         /* Resumen de deudas global y por cliente */
+        .banner-deuda-global { background: #fadbd8; border: 2px dashed #e74c3c; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 25px; }
+        .banner-deuda-global h3 { margin: 0; color: #78281f; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        .banner-deuda-global .monto-global { font-size: 32px; font-weight: bold; color: #c0392b; margin-top: 5px; }
+
         .contenedor-resumen-clientes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
         .tarjeta-cliente { background: #fdfefe; border: 1px solid #d5dbdb; border-top: 4px solid #e74c3c; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .tarjeta-cliente h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; border-bottom: 1px dashed #e5e7e9; padding-bottom: 5px; text-transform: uppercase; }
         .tarjeta-cliente p { margin: 5px 0; font-size: 13px; color: #566573; display: flex; justify-content: space-between; }
-        .tarjeta-cliente .saldo-acumulado { font-size: 15px; font-weight: bold; margin-top: 10px; padding-top: 5px; border-top: 1px solid #eaeded; }
+        .tarjeta-cliente .saldo-acumulado { font-size: 15px; font-weight: bold; margin-top: 10px; padding-top: 5px; border-top: 1px solid #eaeded; display: flex; justify-content: space-between; }
 
         /* Formulario e Importador */
         form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; align-items: center; }
@@ -74,6 +79,10 @@
             <h3>🥩 Total Abonado Carne</h3>
             <p id="saldo-carne">$0.00</p>
         </div>
+        <div class="dash-card deuda-card">
+            <h3>🚨 Deuda Total Pendiente</h3>
+            <p id="deuda-carne-global" style="color: #c0392b;">$0.00</p>
+        </div>
     </div>
 
     <!-- PESTAÑAS CARNE -->
@@ -104,9 +113,9 @@
 
     <!-- CARNE CLIENTE -->
     <div id="vista-carne-cliente" class="vista-seccion vista-activa">
-        <h2>Historial de Clientes 🥩</h2>
+        <h2>Reporte Diario: Historial de Notas de Clientes 🥩</h2>
 
-        <!-- BARRA DE FILTROS POR RANGO DE FECHAS -->
+        <!-- BARRA DE FILTROS POR RANGO DE FECHAS Y CLIENTE -->
         <div class="box-filtro">
             <div class="grupo-filtro">
                 <label>🔍 Cliente:</label>
@@ -153,11 +162,17 @@
 
     <!-- INVENTARIO -->
     <div id="vista-carne-inventario" class="vista-seccion">
-        <h2>Inventario Carne 🥩</h2>
-        
-        <!-- SECCIÓN DE RESUMEN CARNE DEUDAS MOVIDA AQUÍ -->
+        <h2>Inventario Carne & Resumen de Cuentas 🥩</h2>
+
+        <!-- SECCIÓN DE RESUMEN CARNE DEUDAS -->
         <div id="bloque-resumen-clientes">
-            <h2>📊 Estado de Cuentas Acumuladas (Totales por Cliente Carne)</h2>
+            <!-- BANNER DE TOTAL ACUMULADO DE TODAS LAS DEUDAS -->
+            <div class="banner-deuda-global">
+                <h3>📌 TOTAL GLOBAL DE DEUDAS PENDIENTES (TODOS LOS CLIENTES)</h3>
+                <div class="monto-global" id="monto-deuda-total-banner">$0.00</div>
+            </div>
+
+            <h2>📊 Estado de Cuentas Individuales por Cliente</h2>
             <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
         </div>
     </div>
@@ -253,12 +268,20 @@
 
     function calcularSaldosYTotales() {
         let totalAbonadoCarne = 0;
+        let totalCompradoCarne = 0;
+
         movimientos.forEach(mov => {
             if (mov.subTipo === 'cliente') {
                 totalAbonadoCarne += parseFloat(mov.abono || 0);
+                totalCompradoCarne += parseFloat(mov.montoCalculado || 0);
             }
         });
+
+        let deudaTotalGlobal = totalCompradoCarne - totalAbonadoCarne;
+        if (deudaTotalGlobal < 0) deudaTotalGlobal = 0;
+
         document.getElementById('saldo-carne').innerText = formatearMoneda(totalAbonadoCarne);
+        document.getElementById('deuda-carne-global').innerText = formatearMoneda(deudaTotalGlobal);
     }
 
     function actualizarSelectClientesFiltro() {
@@ -314,8 +337,11 @@
 
     function renderizarResumenClientesAcumulado() {
         const contenedor = document.getElementById('lista-resumen-clientes');
+        const bannerMontoGlobal = document.getElementById('monto-deuda-total-banner');
         contenedor.innerHTML = '';
+        
         let cuentasClientes = {};
+        let sumaDeudasGlobal = 0;
 
         const clienteSelect = document.getElementById('filtro-cliente-select').value.toUpperCase().trim();
         const clienteInput = document.getElementById('filtro-cliente-input').value.toUpperCase().trim();
@@ -340,14 +366,15 @@
         });
 
         const listaNombres = Object.keys(cuentasClientes);
-        if (listaNombres.length === 0) {
-            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">No se encontraron registros para el rango o cliente seleccionado.</p>`;
-            return;
-        }
 
         listaNombres.forEach(nombre => {
             const info = cuentasClientes[nombre];
             const saldoTotalPendiente = info.comprado - info.abonado;
+
+            // Si el cliente tiene saldo a favor o deba, lo sumamos al total si es pendiente positivo
+            if (saldoTotalPendiente > 0) {
+                sumaDeudasGlobal += saldoTotalPendiente;
+            }
 
             const div = document.createElement('div');
             div.className = 'tarjeta-cliente';
@@ -356,9 +383,9 @@
             div.innerHTML = `
                 <h4>👤 ${nombre}</h4>
                 <p><span>Total Comprado:</span> <span>${formatearMoneda(info.comprado)}</span></p>
-                <p><span>Total Abonado:</span> <span class="monto-positivo">${formatearMoneda(info.abonado)}</span></p>
+                <p><span>Total Abonado:</span> <span class="monto-ingreso">${formatearMoneda(info.abonado)}</span></p>
                 <div class="saldo-acumulado">
-                    <span>Deuda de Cliente Actual:</span>
+                    <span>Deuda Pendiente:</span>
                     <span class="${saldoTotalPendiente <= 0 ? 'monto-ingreso' : 'monto-egreso'}">
                         ${formatearMoneda(saldoTotalPendiente)}
                     </span>
@@ -366,6 +393,13 @@
             `;
             contenedor.appendChild(div);
         });
+
+        // Actualizar el banner con la suma global
+        bannerMontoGlobal.innerText = formatearMoneda(sumaDeudasGlobal);
+
+        if (listaNombres.length === 0) {
+            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">No se encontraron registros para el rango o cliente seleccionado.</p>`;
+        }
     }
 
     function actualizarVistasTablas() {
@@ -400,7 +434,6 @@
 
             let clienteNombre = (mov.cliente || '').toUpperCase();
             
-            // Filtros de Cliente y Rango de Fecha
             if (filtroCliente && !clienteNombre.includes(filtroCliente)) return;
             if (!coincideRangoFecha(mov.fecha)) return;
 
