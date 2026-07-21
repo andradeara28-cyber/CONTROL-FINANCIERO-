@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Financiero Avanzado - Multinegocio</title>
+    <!-- Librería para leer archivos de Excel (.xlsx / .xls) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1350px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -24,21 +26,25 @@
 
         /* Pestañas de Carne */
         .sub-tabs-carne { display: none; gap: 10px; margin-bottom: 25px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e1e8ed; }
-        .tab-btn { padding: 10px 20px; border: none; background: #e0e6ed; color: #34495e; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .tab-btn { padding: 10px 20px; border: none; background: #e0e6ed; color: #34495e; font-weight: bold; border-radius: 6px; cursor: pointer; flex: 1; text-align: center; }
         .tab-btn.active-tab { background: #e67e22; color: white; }
         
-        /* Resumen de deudas global (Fijo) */
+        /* Resumen de deudas global */
         .contenedor-resumen-clientes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
         .tarjeta-cliente { background: #fdfefe; border: 1px solid #d5dbdb; border-top: 4px solid #e74c3c; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .tarjeta-cliente h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; border-bottom: 1px dashed #e5e7e9; padding-bottom: 5px; text-transform: uppercase; }
         .tarjeta-cliente p { margin: 5px 0; font-size: 13px; color: #566573; display: flex; justify-content: space-between; }
         .tarjeta-cliente .saldo-acumulado { font-size: 15px; font-weight: bold; margin-top: 10px; padding-top: 5px; border-top: 1px solid #eaeded; }
 
-        /* Formulario */
-        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 30px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; align-items: center; }
+        /* Formulario e Importador */
+        form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; align-items: center; }
+        .box-excel { background: #eef9f1; border: 1px dashed #27ae60; padding: 15px; border-radius: 8px; margin-bottom: 30px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        
         input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; width: 100%; }
         button { background-color: #2c3e50; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #1a252f; }
+        .btn-excel { background-color: #27ae60; width: auto; padding: 10px 20px; }
+        .btn-excel:hover { background-color: #1e8449; }
         
         /* Tablas */
         .table-responsive { overflow-x: auto; margin-bottom: 25px; }
@@ -94,10 +100,27 @@
     <div class="sub-tabs-carne" id="pestanas-carne">
         <button class="tab-btn active-tab" id="btn-sub-cliente" onclick="cambiarSubTabCarne('cliente')">1. Cliente Carne</button>
         <button class="tab-btn" id="btn-sub-inventario" onclick="cambiarSubTabCarne('inventario')">2. Inventario Carne</button>
-        <button class="tab-btn" id="btn-sub-proveedor" onclick="cambiarSubTabCarne('proveedor')">3. Proveedor Carne</button>
     </div>
 
-    <!-- FORMULARIO -->
+    <!-- IMPORTADOR DE EXCEL -->
+    <h2>📊 Carga Masiva desde Excel</h2>
+    <div class="box-excel">
+        <div style="flex-grow: 1;">
+            <strong>¿Tienes un historial previo en Excel?</strong> Cárgalo aquí para sumarlo al sistema automáticamente:
+            <input type="file" id="input-excel" accept=".xlsx, .xls, .csv" style="margin-top: 8px; background: white;">
+        </div>
+        <div>
+            <select id="area-importacion" style="width: auto; background: white;">
+                <option value="Carne-Cliente">🥩 Carne (Clientes)</option>
+                <option value="Forrajera">🌾 Forrajera</option>
+                <option value="Tuna">🌵 Tuna</option>
+                <option value="Xoconostle">🔴 Xoconostle</option>
+            </select>
+            <button type="button" class="btn-excel" onclick="procesarExcel()">📥 Cargar Excel</button>
+        </div>
+    </div>
+
+    <!-- FORMULARIO MANUAL -->
     <h2>Registrar Nuevo Movimiento</h2>
     <form id="registro-form">
         <input type="date" id="fecha" required>
@@ -189,29 +212,6 @@
         <p style="font-style: italic; color: #7f8c8d;">(Espacio en blanco por el momento)</p>
     </div>
 
-    <!-- CARNE PROVEEDOR -->
-    <div id="vista-carne-proveedor" class="vista-seccion">
-        <h2>Reporte: Proveedores Carne 🥩</h2>
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Nombre Proveedor</th>
-                        <th>Número de Nota</th>
-                        <th>Kilos</th>
-                        <th>Precio</th>
-                        <th>Importe</th>
-                        <th>Abonos</th>
-                        <th>Saldo</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="carne-proveedor-cuerpo"></tbody>
-            </table>
-        </div>
-    </div>
-
     <!-- TUNA / XOCO -->
     <div id="vista-tuna-xoco" class="vista-seccion">
         <h2 id="titulo-tuna-xoco">Reporte</h2>
@@ -225,19 +225,12 @@
         </div>
     </div>
 
-    <!-- SECCIÓN DE RESUMEN INTELIGENTE / DINÁMICO POR SEPARADO -->
+    <!-- SECCIÓN DE RESUMEN INTELIGENTE POR SEPARADO -->
     <hr style="margin-top: 40px; border: 0; border-top: 2px dashed #bdc3c7;">
     
-    <!-- Bloque exclusivo para Clientes Carne -->
     <div id="bloque-resumen-clientes">
         <h2>📊 Estado de Cuentas Acumuladas (Totales por Cliente Carne)</h2>
         <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
-    </div>
-
-    <!-- Bloque exclusivo para Proveedores Carne -->
-    <div id="bloque-resumen-proveedores" style="margin-top: 20px;">
-        <h2>📊 Estado de Cuentas Acumuladas (Totales por Proveedor Carne)</h2>
-        <div class="contenedor-resumen-clientes" id="lista-resumen-proveedores"></div>
     </div>
 
 </div>
@@ -261,7 +254,6 @@
     const pestanasCarne = document.getElementById('pestanas-carne');
     
     const bloqueClientes = document.getElementById('bloque-resumen-clientes');
-    const bloqueProveedores = document.getElementById('bloque-resumen-proveedores');
 
     function formatearMoneda(valor) {
         return new Intl.NumberFormat('en-US', {
@@ -305,14 +297,6 @@
                 }
                 camposDinamicos.innerHTML = htmlCampos;
 
-            } else if (subTabCarneActual === 'proveedor') {
-                camposDinamicos.innerHTML = `
-                    <input type="text" id="p_proveedor" placeholder="Nombre Proveedor" required>
-                    <input type="text" id="p_nota" placeholder="Número de Nota" required>
-                    <input type="number" id="p_kilos" placeholder="Kilos" min="0" step="0.001" required>
-                    <input type="number" id="p_precio" placeholder="Precio ($)" min="0" step="0.01" required>
-                    <input type="number" id="p_abono" placeholder="Abono ($)" min="0" step="0.01" value="0" required>
-                `;
             } else {
                 camposDinamicos.innerHTML = `<p style="color: #7f8c8d; font-size: 14px; text-align: center; width: 100%;">Inventario en blanco temporalmente</p>`;
             }
@@ -388,10 +372,6 @@
                     let abonoEfectivo = parseFloat(mov.abono || 0);
                     saldos.Carne += abonoEfectivo;
                     totalGeneral += abonoEfectivo;
-                } else if (mov.subTipo === 'proveedor') {
-                    let pagoProv = parseFloat(mov.abono || 0);
-                    saldos.Carne -= pagoProv;
-                    totalGeneral -= pagoProv;
                 }
             } else {
                 let valor = parseFloat(mov.monto || 0);
@@ -420,7 +400,7 @@
 
         movimientos.forEach(mov => {
             if (mov.negocio === 'Carne' && mov.subTipo === 'cliente') {
-                let nombre = mov.cliente.trim().toUpperCase();
+                let nombre = (mov.cliente || 'VARIOS').trim().toUpperCase();
                 let totalNota = parseFloat(mov.montoCalculado || 0);
                 let abonoNota = parseFloat(mov.abono || 0);
 
@@ -461,81 +441,23 @@
         });
     }
 
-    function renderizarResumenProveedoresAcumulado() {
-        const contenedor = document.getElementById('lista-resumen-proveedores');
-        contenedor.innerHTML = '';
-        let cuentasProveedores = {};
-
-        movimientos.forEach(mov => {
-            if (mov.negocio === 'Carne' && mov.subTipo === 'proveedor') {
-                let nombre = mov.proveedor.trim().toUpperCase();
-                let totalNota = parseFloat(mov.montoCalculado || 0);
-                let abonoNota = parseFloat(mov.abono || 0);
-
-                if (!cuentasProveedores[nombre]) {
-                    cuentasProveedores[nombre] = { comprado: 0, abonado: 0 };
-                }
-                cuentasProveedores[nombre].comprado += totalNota;
-                cuentasProveedores[nombre].abonado += abonoNota;
-            }
-        });
-
-        const listaNombres = Object.keys(cuentasProveedores);
-        if (listaNombres.length === 0) {
-            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">Sin proveedores registrados todavía.</p>`;
-            return;
-        }
-
-        listaNombres.forEach(nombre => {
-            const info = cuentasProveedores[nombre];
-            const saldoTotalPendiente = info.comprado - info.abonado;
-
-            const div = document.createElement('div');
-            div.className = 'tarjeta-cliente';
-            // Para proveedores usamos color morado/azul para diferenciarlos visualmente
-            div.style.borderTopColor = saldoTotalPendiente <= 0 ? '#2ecc71' : '#9b59b6';
-
-            div.innerHTML = `
-                <h4>🏭 ${nombre}</h4>
-                <p><span>Total de Notas:</span> <span>${formatearMoneda(info.comprado)}</span></p>
-                <p><span>Pagos Hechos a Prov:</span> <span class="monto-positivo">${formatearMoneda(info.abonado)}</span></p>
-                <div class="saldo-acumulado">
-                    <span>Nuestra Deuda con Proveedor:</span>
-                    <span class="${saldoTotalPendiente <= 0 ? 'monto-positivo' : 'monto-negativo'}">
-                        ${formatearMoneda(saldoTotalPendiente)}
-                    </span>
-                </div>
-            `;
-            contenedor.appendChild(div);
-        });
-    }
-
     function actualizarVistasTablas() {
         localStorage.setItem(CLAVE_A, JSON.stringify(movimientos));
         localStorage.setItem(CLAVE_B, JSON.stringify(movimientos));
         
         calcularSaldosYTotales();
         renderizarResumenClientesAcumulado();
-        renderizarResumenProveedoresAcumulado();
 
         document.querySelectorAll('.vista-seccion').forEach(v => v.classList.remove('vista-activa'));
 
-        // REGLAS INTELIGENTES DE SEPARACIÓN:
         if (filtroActual === 'Carne') {
             if (subTabCarneActual === 'cliente') {
                 bloqueClientes.style.display = 'block';
-                bloqueProveedores.style.display = 'none';
-            } else if (subTabCarneActual === 'proveedor') {
+            } else {
                 bloqueClientes.style.display = 'none';
-                bloqueProveedores.style.display = 'block';
-            } else { // Inventario
-                bloqueClientes.style.display = 'none';
-                bloqueProveedores.style.display = 'none';
             }
         } else {
-            // En vista "Todos" o fuera de Carne se ven los dos bloques ordenados por categoría
             bloqueClientes.style.display = 'block';
-            bloqueProveedores.style.display = 'block';
         }
 
         if (filtroActual === 'Todos') {
@@ -550,9 +472,6 @@
                 renderizarCarneCliente();
             } else if (subTabCarneActual === 'inventario') {
                 document.getElementById('vista-carne-inventario').classList.add('vista-activa');
-            } else if (subTabCarneActual === 'proveedor') {
-                document.getElementById('vista-carne-proveedor').classList.add('vista-activa');
-                renderizarCarneProveedor();
             }
         } else {
             document.getElementById('vista-tuna-xoco').classList.add('vista-activa');
@@ -566,9 +485,9 @@
         tbody.innerHTML = '';
         movimientos.forEach((mov, idx) => {
             const tr = document.createElement('tr');
-            let itemCliente = mov.cliente || mov.proveedor || '-';
+            let itemCliente = mov.cliente || '-';
             let monto = (mov.negocio === 'Carne' && mov.isAbonoPuro) ? parseFloat(mov.abono || 0) : parseFloat(mov.montoCalculado || mov.monto || 0);
-            let tipoLabel = mov.subTipo ? (mov.subTipo === 'cliente' ? (mov.isAbonoPuro ? 'Abono' : 'Cliente') : 'Proveedor') : (mov.tipo || 'Ingreso');
+            let tipoLabel = mov.subTipo ? (mov.isAbonoPuro ? 'Abono' : 'Cliente') : (mov.tipo || 'Ingreso');
             tr.innerHTML = `
                 <td>${formatearFecha(mov.fecha)}</td>
                 <td><strong>${itemCliente}</strong></td>
@@ -633,30 +552,6 @@
         });
     }
 
-    function renderizarCarneProveedor() {
-        const tbody = document.getElementById('carne-proveedor-cuerpo');
-        tbody.innerHTML = '';
-        movimientos.forEach((mov, idx) => {
-            if (mov.negocio !== 'Carne' || mov.subTipo !== 'proveedor') return;
-            const tr = document.createElement('tr');
-            let Durango = parseFloat(mov.montoCalculado || 0);
-            let abono = parseFloat(mov.abono || 0);
-            let saldo = Durango - abono;
-            tr.innerHTML = `
-                <td>${formatearFecha(mov.fecha)}</td>
-                <td>${mov.proveedor}</td>
-                <td>#${mov.numeroNota}</td>
-                <td>${parseFloat(mov.kilos || 0).toFixed(3)} KG</td>
-                <td>${formatearMoneda(parseFloat(mov.precio || 0))}</td>
-                <td style="font-weight:bold;">${formatearMoneda(Durango)}</td>
-                <td class="monto-ingreso">${formatearMoneda(abono)}</td>
-                <td class="monto-egreso">${formatearMoneda(saldo)}</td>
-                <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">Eliminar</button></td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
     function renderizarTunaXoco() {
         const tbody = document.getElementById('tuna-xoco-cuerpo');
         tbody.innerHTML = '';
@@ -673,6 +568,103 @@
             `;
             tbody.appendChild(tr);
         });
+    }
+
+    // LÓGICA DE PROCESAMIENTO E IMPORTACIÓN DE EXCEL
+    function procesarExcel() {
+        const fileInput = document.getElementById('input-excel');
+        const destino = document.getElementById('area-importacion').value;
+
+        if (!fileInput.files.length) {
+            alert('Por favor selecciona un archivo Excel (.xlsx o .csv)');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonFilas = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                if (jsonFilas.length === 0) {
+                    alert('El archivo Excel parece estar vacío.');
+                    return;
+                }
+
+                let agregados = 0;
+                jsonFilas.forEach(row => {
+                    let rowNorm = {};
+                    Object.keys(row).forEach(k => { rowNorm[k.trim().toLowerCase()] = row[k]; });
+
+                    let fecha = rowNorm['fecha'] || inputFecha.value;
+                    if(typeof fecha === 'number') {
+                        fecha = new Date((fecha - (25567 + 2)) * 86400 * 1000).toISOString().split('T')[0];
+                    }
+
+                    if (destino === 'Carne-Cliente') {
+                        let peso = parseFloat(rowNorm['peso'] || rowNorm['kg'] || 0);
+                        let precio = parseFloat(rowNorm['precio'] || 0);
+                        let abono = parseFloat(rowNorm['abono'] || rowNorm['pago'] || 0);
+                        let totalCalculado = peso * precio;
+
+                        movimientos.push({
+                            fecha: fecha,
+                            negocio: 'Carne',
+                            subTipo: 'cliente',
+                            cliente: String(rowNorm['cliente'] || rowNorm['nombre'] || 'CLIENTE EXCEL').toUpperCase().trim(),
+                            metodoPago: rowNorm['pago'] || rowNorm['forma de pago'] || 'Efectivo',
+                            concepto: String(rowNorm['concepto'] || rowNorm['detalle'] || 'VENTA IMPORTADA').toUpperCase(),
+                            peso: peso,
+                            precio: precio,
+                            montoCalculado: totalCalculado > 0 ? totalCalculado : parseFloat(rowNorm['total'] || 0),
+                            abono: abono,
+                            isAbonoPuro: (peso === 0 && precio === 0)
+                        });
+                        agregados++;
+                    } 
+                    else if (destino === 'Forrajera') {
+                        movimientos.push({
+                            fecha: fecha,
+                            negocio: 'Forrajera',
+                            cliente: String(rowNorm['clasificacion'] || 'REVOLTURA').toUpperCase(),
+                            tipo: rowNorm['tipo'] || 'Ingreso',
+                            metodoPago: rowNorm['pago'] || 'Efectivo',
+                            monto: parseFloat(rowNorm['monto'] || rowNorm['total'] || 0),
+                            concepto: String(rowNorm['concepto'] || 'CONCEPTO EXCEL').toUpperCase()
+                        });
+                        agregados++;
+                    }
+                    else {
+                        movimientos.push({
+                            fecha: fecha,
+                            negocio: destino,
+                            cliente: String(rowNorm['cliente'] || 'CLIENTE EXCEL').toUpperCase().trim(),
+                            metodoPago: rowNorm['pago'] || 'Efectivo',
+                            monto: parseFloat(rowNorm['monto'] || rowNorm['total'] || 0),
+                            concepto: String(rowNorm['concepto'] || 'VENTA EXCEL').toUpperCase(),
+                            tipo: 'Ingreso'
+                        });
+                        agregados++;
+                    }
+                });
+
+                movimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                actualizarVistasTablas();
+                alert(`¡Éxito! Se importaron ${agregados} registros desde el Excel.`);
+                fileInput.value = '';
+
+            } catch (err) {
+                console.error(err);
+                alert('Hubo un problema al procesar el archivo Excel. Verifica que el archivo no esté dañado.');
+            }
+        };
+
+        reader.readAsArrayBuffer(file);
     }
 
     form.addEventListener('submit', (e) => {
@@ -703,17 +695,6 @@
                     nuevoMov.abono = parseFloat(document.getElementById('c_abono').value || 0);
                     nuevoMov.isAbonoPuro = true;
                 }
-            } else if (subTabCarneActual === 'proveedor') {
-                let k = parseFloat(document.getElementById('p_kilos').value || 0);
-                let pr = parseFloat(document.getElementById('p_precio').value || 0);
-                nuevoMov.proveedor = document.getElementById('p_proveedor').value.toUpperCase().trim();
-                nuevoMov.numeroNota = document.getElementById('p_nota').value;
-                nuevoMov.kilos = k;
-                nuevoMov.precio = pr;
-                nuevoMov.abono = parseFloat(document.getElementById('p_abono').value || 0);
-                nuevoMov.montoCalculado = k * pr;
-                nuevoMov.metodoPago = 'Efectivo/Transf';
-                nuevoMov.concepto = `NOTA DE COMPRA #${nuevoMov.numeroNota}`;
             } else { return; }
         } else if (area === 'Forrajera') {
             nuevoMov.cliente = document.getElementById('f_clasificacion').value;
