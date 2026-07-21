@@ -140,14 +140,12 @@
     <!-- INVENTARIO -->
     <div id="vista-carne-inventario" class="vista-seccion">
         <h2>Inventario Carne 🥩</h2>
-        <p style="font-style: italic; color: #7f8c8d;">(Espacio en blanco por el momento)</p>
-    </div>
-
-    <!-- SECCIÓN DE RESUMEN CARNE DEUDAS -->
-    <div id="bloque-resumen-clientes">
-        <hr style="margin-top: 40px; border: 0; border-top: 2px dashed #bdc3c7;">
-        <h2>📊 Estado de Cuentas Acumuladas (Totales por Cliente Carne)</h2>
-        <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
+        
+        <!-- SECCIÓN DE RESUMEN CARNE DEUDAS MOVIDA AQUÍ -->
+        <div id="bloque-resumen-clientes">
+            <h2>📊 Estado de Cuentas Acumuladas (Totales por Cliente Carne)</h2>
+            <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
+        </div>
     </div>
 
 </div>
@@ -164,7 +162,6 @@
     const form = document.getElementById('registro-form');
     const inputFecha = document.getElementById('fecha');
     const camposDinamicos = document.getElementById('campos-dinamicos-contenedor');
-    const bloqueClientes = document.getElementById('bloque-resumen-clientes');
 
     function formatearMoneda(valor) {
         return new Intl.NumberFormat('en-US', {
@@ -274,7 +271,7 @@
     function aplicarFiltroClienteSelect() {
         const select = document.getElementById('filtro-cliente-select');
         const input = document.getElementById('filtro-cliente-input');
-        input.value = ''; // Limpia el buscador manual si se usa la lista
+        input.value = '';
         filtroClienteActual = select.value.toUpperCase().trim();
         renderizarCarneCliente();
         renderizarResumenClientesAcumulado();
@@ -282,7 +279,7 @@
 
     function filtrarPorNombre(texto) {
         const select = document.getElementById('filtro-cliente-select');
-        select.value = ''; // Limpia el select si se escribe en el buscador
+        select.value = '';
         filtroClienteActual = texto.toUpperCase().trim();
         renderizarCarneCliente();
         renderizarResumenClientesAcumulado();
@@ -305,7 +302,6 @@
             if (mov.subTipo === 'cliente') {
                 let nombre = (mov.cliente || 'VARIOS').trim().toUpperCase();
 
-                // Si hay un filtro activo, solo cuenta ese cliente
                 if (filtroClienteActual && !nombre.includes(filtroClienteActual)) return;
 
                 let totalNota = parseFloat(mov.montoCalculado || 0);
@@ -359,11 +355,9 @@
 
         if (subTabCarneActual === 'cliente') {
             document.getElementById('vista-carne-cliente').classList.add('vista-activa');
-            bloqueClientes.style.display = 'block';
             renderizarCarneCliente();
         } else {
             document.getElementById('vista-carne-inventario').classList.add('vista-activa');
-            bloqueClientes.style.display = 'none';
         }
     }
 
@@ -378,7 +372,6 @@
 
             let clienteNombre = (mov.cliente || '').toUpperCase();
             
-            // Aplicar Filtro
             if (filtroClienteActual && !clienteNombre.includes(filtroClienteActual)) {
                 return;
             }
