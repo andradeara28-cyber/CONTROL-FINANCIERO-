@@ -33,11 +33,18 @@
         form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; align-items: center; }
         .box-excel { background: #eef9f1; border: 1px dashed #27ae60; padding: 15px; border-radius: 8px; margin-bottom: 30px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         
+        /* Barrita de Filtro */
+        .box-filtro { background: #ebf5fb; border: 1px solid #a9cce3; padding: 12px 18px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .box-filtro label { font-weight: bold; color: #2980b9; font-size: 14px; }
+        .box-filtro input, .box-filtro select { width: auto; min-width: 200px; }
+
         input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; width: 100%; }
         button { background-color: #2c3e50; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #1a252f; }
         .btn-excel { background-color: #27ae60; width: auto; padding: 10px 20px; }
         .btn-excel:hover { background-color: #1e8449; }
+        .btn-limpiar { background-color: #95a5a6; width: auto; padding: 8px 15px; font-size: 13px; }
+        .btn-limpiar:hover { background-color: #7f8c8d; }
         
         /* Tablas */
         .table-responsive { overflow-x: auto; margin-bottom: 25px; }
@@ -97,6 +104,17 @@
     <!-- CARNE CLIENTE -->
     <div id="vista-carne-cliente" class="vista-seccion vista-activa">
         <h2>Reporte Diario: Historial de Notas de Clientes 🥩</h2>
+
+        <!-- BARRA DE FILTRO POR CLIENTE -->
+        <div class="box-filtro">
+            <label for="filtro-cliente">🔍 Filtrar por Cliente:</label>
+            <select id="filtro-cliente-select" onchange="aplicarFiltroClienteSelect()">
+                <option value="">-- Ver todos los clientes --</option>
+            </select>
+            <input type="text" id="filtro-cliente-input" placeholder="Escribe un nombre..." oninput="filtrarPorNombre(this.value)">
+            <button type="button" class="btn-limpiar" onclick="limpiarFiltroCliente()">Mostrar Todos</button>
+        </div>
+
         <div class="table-responsive">
             <table>
                 <thead>
@@ -141,6 +159,7 @@
     let movimientos = datosGuardados ? JSON.parse(datosGuardados) : [];
 
     let subTabCarneActual = 'cliente';
+    let filtroClienteActual = '';
 
     const form = document.getElementById('registro-form');
     const inputFecha = document.getElementById('fecha');
@@ -230,6 +249,53 @@
         document.getElementById('saldo-carne').innerText = formatearMoneda(totalAbonadoCarne);
     }
 
+    function actualizarSelectClientesFiltro() {
+        const select = document.getElementById('filtro-cliente-select');
+        const valorActual = select.value;
+        select.innerHTML = '<option value="">-- Ver todos los clientes --</option>';
+
+        let nombresUnicos = new Set();
+        movimientos.forEach(mov => {
+            if (mov.subTipo === 'cliente' && mov.cliente) {
+                nombresUnicos.add(mov.cliente.toUpperCase().trim());
+            }
+        });
+
+        Array.from(nombresUnicos).sort().forEach(nombre => {
+            const option = document.createElement('option');
+            option.value = nombre;
+            option.textContent = nombre;
+            select.appendChild(option);
+        });
+
+        select.value = valorActual;
+    }
+
+    function aplicarFiltroClienteSelect() {
+        const select = document.getElementById('filtro-cliente-select');
+        const input = document.getElementById('filtro-cliente-input');
+        input.value = ''; // Limpia el buscador manual si se usa la lista
+        filtroClienteActual = select.value.toUpperCase().trim();
+        renderizarCarneCliente();
+        renderizarResumenClientesAcumulado();
+    }
+
+    function filtrarPorNombre(texto) {
+        const select = document.getElementById('filtro-cliente-select');
+        select.value = ''; // Limpia el select si se escribe en el buscador
+        filtroClienteActual = texto.toUpperCase().trim();
+        renderizarCarneCliente();
+        renderizarResumenClientesAcumulado();
+    }
+
+    function limpiarFiltroCliente() {
+        document.getElementById('filtro-cliente-select').value = '';
+        document.getElementById('filtro-cliente-input').value = '';
+        filtroClienteActual = '';
+        renderizarCarneCliente();
+        renderizarResumenClientesAcumulado();
+    }
+
     function renderizarResumenClientesAcumulado() {
         const contenedor = document.getElementById('lista-resumen-clientes');
         contenedor.innerHTML = '';
@@ -238,6 +304,10 @@
         movimientos.forEach(mov => {
             if (mov.subTipo === 'cliente') {
                 let nombre = (mov.cliente || 'VARIOS').trim().toUpperCase();
+
+                // Si hay un filtro activo, solo cuenta ese cliente
+                if (filtroClienteActual && !nombre.includes(filtroClienteActual)) return;
+
                 let totalNota = parseFloat(mov.montoCalculado || 0);
                 let abonoNota = parseFloat(mov.abono || 0);
 
@@ -251,7 +321,7 @@
 
         const listaNombres = Object.keys(cuentasClientes);
         if (listaNombres.length === 0) {
-            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">Sin clientes registrados todavía.</p>`;
+            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">No se encontraron tarjetas para esta búsqueda.</p>`;
             return;
         }
 
@@ -282,6 +352,7 @@
         localStorage.setItem(CLAVE_STORAGE, JSON.stringify(movimientos));
         
         calcularSaldosYTotales();
+        actualizarSelectClientesFiltro();
         renderizarResumenClientesAcumulado();
 
         document.querySelectorAll('.vista-seccion').forEach(v => v.classList.remove('vista-activa'));
@@ -299,8 +370,20 @@
     function renderizarCarneCliente() {
         const tbody = document.getElementById('carne-cliente-cuerpo');
         tbody.innerHTML = '';
+
+        let visibles = 0;
+
         movimientos.forEach((mov, idx) => {
             if (mov.subTipo !== 'cliente') return;
+
+            let clienteNombre = (mov.cliente || '').toUpperCase();
+            
+            // Aplicar Filtro
+            if (filtroClienteActual && !clienteNombre.includes(filtroClienteActual)) {
+                return;
+            }
+
+            visibles++;
             const tr = document.createElement('tr');
             let total = parseFloat(mov.montoCalculado || 0);
             let abono = parseFloat(mov.abono || 0);
@@ -325,6 +408,10 @@
             `;
             tbody.appendChild(tr);
         });
+
+        if (visibles === 0) {
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#7f8c8d; font-style:italic; padding: 20px;">No hay notas o pagos registrados para "${filtroClienteActual}".</td></tr>`;
+        }
     }
 
     function procesarExcel() {
@@ -405,7 +492,7 @@
         const tipoReg = document.getElementById('c_tipo_registro').value;
         let nuevoMov = {
             fecha: inputFecha.value,
-            hora: obtenerHoraActual(), // Captura la hora en ese instante preciso
+            hora: obtenerHoraActual(),
             subTipo: 'cliente',
             cliente: document.getElementById('c_nombre').value.toUpperCase().trim(),
             metodoPago: document.getElementById('c_pago').value,
@@ -428,7 +515,7 @@
             nuevoMov.isAbonoPuro = true;
         }
 
-        movimientos.unshift(nuevoMov); // Lo pon al principio de la lista para ver el más reciente primero
+        movimientos.unshift(nuevoMov);
 
         form.reset();
         establecerFechaDeHoy();
