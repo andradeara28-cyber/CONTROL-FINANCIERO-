@@ -33,10 +33,10 @@
         form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; align-items: center; }
         .box-excel { background: #eef9f1; border: 1px dashed #27ae60; padding: 15px; border-radius: 8px; margin-bottom: 30px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         
-        /* Barrita de Filtro */
+        /* Barrita de Filtros Avanzada */
         .box-filtro { background: #ebf5fb; border: 1px solid #a9cce3; padding: 12px 18px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
-        .box-filtro label { font-weight: bold; color: #2980b9; font-size: 14px; }
-        .box-filtro input, .box-filtro select { width: auto; min-width: 200px; }
+        .box-filtro label { font-weight: bold; color: #2980b9; font-size: 13px; }
+        .box-filtro input, .box-filtro select { width: auto; min-width: 160px; }
 
         input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; width: 100%; }
         button { background-color: #2c3e50; color: white; border: none; cursor: pointer; font-weight: bold; }
@@ -105,14 +105,28 @@
     <div id="vista-carne-cliente" class="vista-seccion vista-activa">
         <h2>Reporte Diario: Historial de Notas de Clientes 🥩</h2>
 
-        <!-- BARRA DE FILTRO POR CLIENTE -->
+        <!-- BARRA DE FILTROS AVANZADA -->
         <div class="box-filtro">
-            <label for="filtro-cliente">🔍 Filtrar por Cliente:</label>
-            <select id="filtro-cliente-select" onchange="aplicarFiltroClienteSelect()">
-                <option value="">-- Ver todos los clientes --</option>
-            </select>
-            <input type="text" id="filtro-cliente-input" placeholder="Escribe un nombre..." oninput="filtrarPorNombre(this.value)">
-            <button type="button" class="btn-limpiar" onclick="limpiarFiltroCliente()">Mostrar Todos</button>
+            <div>
+                <label>🔍 Cliente:</label>
+                <select id="filtro-cliente-select" onchange="aplicarFiltros()">
+                    <option value="">-- Todos los clientes --</option>
+                </select>
+                <input type="text" id="filtro-cliente-input" placeholder="Escribe un nombre..." oninput="aplicarFiltros()">
+            </div>
+
+            <div>
+                <label>📅 Periodo / Fecha:</label>
+                <select id="filtro-tiempo-select" onchange="aplicarFiltros()">
+                    <option value="todos">Histórico Completo</option>
+                    <option value="hoy">Hoy / Día Especificado</option>
+                    <option value="semana">Esta Semana (Últimos 7 días)</option>
+                    <option value="mes">Este Mes</option>
+                    <option value="anio">Este Año</option>
+                </select>
+            </div>
+
+            <button type="button" class="btn-limpiar" onclick="limpiarFiltros()">Mostrar Todo</button>
         </div>
 
         <div class="table-responsive">
@@ -157,7 +171,6 @@
     let movimientos = datosGuardados ? JSON.parse(datosGuardados) : [];
 
     let subTabCarneActual = 'cliente';
-    let filtroClienteActual = '';
 
     const form = document.getElementById('registro-form');
     const inputFecha = document.getElementById('fecha');
@@ -249,7 +262,7 @@
     function actualizarSelectClientesFiltro() {
         const select = document.getElementById('filtro-cliente-select');
         const valorActual = select.value;
-        select.innerHTML = '<option value="">-- Ver todos los clientes --</option>';
+        select.innerHTML = '<option value="">-- Todos los clientes --</option>';
 
         let nombresUnicos = new Set();
         movimientos.forEach(mov => {
@@ -268,29 +281,44 @@
         select.value = valorActual;
     }
 
-    function aplicarFiltroClienteSelect() {
-        const select = document.getElementById('filtro-cliente-select');
-        const input = document.getElementById('filtro-cliente-input');
-        input.value = '';
-        filtroClienteActual = select.value.toUpperCase().trim();
+    function coincideFechaPeriodo(fechaMovStr, periodo) {
+        if (periodo === 'todos' || !fechaMovStr) return true;
+
+        const hoy = new Date();
+        const [yearMov, monthMov, dayMov] = fechaMovStr.split('-').map(Number);
+        const fechaMov = new Date(yearMov, monthMov - 1, dayMov);
+
+        if (periodo === 'hoy') {
+            const fechaInputForm = inputFecha.value;
+            return fechaMovStr === fechaInputForm;
+        }
+
+        if (periodo === 'semana') {
+            const diferenciaDias = (hoy - fechaMov) / (1000 * 60 * 60 * 24);
+            return diferenciaDias >= 0 && diferenciaDias <= 7;
+        }
+
+        if (periodo === 'mes') {
+            return fechaMov.getMonth() === hoy.getMonth() && fechaMov.getFullYear() === hoy.getFullYear();
+        }
+
+        if (periodo === 'anio') {
+            return fechaMov.getFullYear() === hoy.getFullYear();
+        }
+
+        return true;
+    }
+
+    function aplicarFiltros() {
         renderizarCarneCliente();
         renderizarResumenClientesAcumulado();
     }
 
-    function filtrarPorNombre(texto) {
-        const select = document.getElementById('filtro-cliente-select');
-        select.value = '';
-        filtroClienteActual = texto.toUpperCase().trim();
-        renderizarCarneCliente();
-        renderizarResumenClientesAcumulado();
-    }
-
-    function limpiarFiltroCliente() {
+    function limpiarFiltros() {
         document.getElementById('filtro-cliente-select').value = '';
         document.getElementById('filtro-cliente-input').value = '';
-        filtroClienteActual = '';
-        renderizarCarneCliente();
-        renderizarResumenClientesAcumulado();
+        document.getElementById('filtro-tiempo-select').value = 'todos';
+        aplicarFiltros();
     }
 
     function renderizarResumenClientesAcumulado() {
@@ -298,11 +326,17 @@
         contenedor.innerHTML = '';
         let cuentasClientes = {};
 
+        const clienteSelect = document.getElementById('filtro-cliente-select').value.toUpperCase().trim();
+        const clienteInput = document.getElementById('filtro-cliente-input').value.toUpperCase().trim();
+        const filtroCliente = clienteSelect || clienteInput;
+        const filtroTiempo = document.getElementById('filtro-tiempo-select').value;
+
         movimientos.forEach(mov => {
             if (mov.subTipo === 'cliente') {
                 let nombre = (mov.cliente || 'VARIOS').trim().toUpperCase();
 
-                if (filtroClienteActual && !nombre.includes(filtroClienteActual)) return;
+                if (filtroCliente && !nombre.includes(filtroCliente)) return;
+                if (!coincideFechaPeriodo(mov.fecha, filtroTiempo)) return;
 
                 let totalNota = parseFloat(mov.montoCalculado || 0);
                 let abonoNota = parseFloat(mov.abono || 0);
@@ -317,7 +351,7 @@
 
         const listaNombres = Object.keys(cuentasClientes);
         if (listaNombres.length === 0) {
-            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">No se encontraron tarjetas para esta búsqueda.</p>`;
+            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">No se encontraron registros para los filtros seleccionados.</p>`;
             return;
         }
 
@@ -365,6 +399,11 @@
         const tbody = document.getElementById('carne-cliente-cuerpo');
         tbody.innerHTML = '';
 
+        const clienteSelect = document.getElementById('filtro-cliente-select').value.toUpperCase().trim();
+        const clienteInput = document.getElementById('filtro-cliente-input').value.toUpperCase().trim();
+        const filtroCliente = clienteSelect || clienteInput;
+        const filtroTiempo = document.getElementById('filtro-tiempo-select').value;
+
         let visibles = 0;
 
         movimientos.forEach((mov, idx) => {
@@ -372,9 +411,9 @@
 
             let clienteNombre = (mov.cliente || '').toUpperCase();
             
-            if (filtroClienteActual && !clienteNombre.includes(filtroClienteActual)) {
-                return;
-            }
+            // Aplicar Filtro de Cliente y Filtro de Fecha
+            if (filtroCliente && !clienteNombre.includes(filtroCliente)) return;
+            if (!coincideFechaPeriodo(mov.fecha, filtroTiempo)) return;
 
             visibles++;
             const tr = document.createElement('tr');
@@ -403,7 +442,7 @@
         });
 
         if (visibles === 0) {
-            tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#7f8c8d; font-style:italic; padding: 20px;">No hay notas o pagos registrados para "${filtroClienteActual}".</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#7f8c8d; font-style:italic; padding: 20px;">No se encontraron notas o pagos para los filtros seleccionados.</td></tr>`;
         }
     }
 
@@ -474,7 +513,7 @@
             }
         };
 
-        reader.readAsArrayBuffer(file);
+        reader.readAsBuffer(file);
     }
 
     form.addEventListener('submit', (e) => {
