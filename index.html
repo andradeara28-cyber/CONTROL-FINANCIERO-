@@ -11,23 +11,23 @@
         h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
         h2 { color: #2c3e50; border-bottom: 2px solid #e1e8ed; padding-bottom: 8px; margin-top: 30px; }
         
-        /* Dashboard */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .dash-card { background: #eef2f7; padding: 15px; border-radius: 8px; text-align: center; border-left: 5px solid #e67e22; }
-        .dash-card.deuda-card { border-left-color: #e74c3c; background: #fdf2e9; }
+        /* Dashboard Superior (Solo Abonado) */
+        .dashboard-grid { display: flex; justify-content: center; margin-bottom: 30px; }
+        .dash-card { background: #eef2f7; padding: 15px 40px; border-radius: 8px; text-align: center; border-left: 5px solid #e67e22; width: 100%; max-width: 400px; }
         .dash-card h3 { margin: 0; color: #7f8c8d; font-size: 13px; text-transform: uppercase; }
-        .dash-card p { margin: 8px 0 0 0; font-size: 22px; font-weight: bold; }
+        .dash-card p { margin: 8px 0 0 0; font-size: 24px; font-weight: bold; }
 
         /* Pestañas de Carne */
         .sub-tabs-carne { display: flex; gap: 10px; margin-bottom: 25px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e1e8ed; }
         .tab-btn { padding: 10px 20px; border: none; background: #e0e6ed; color: #34495e; font-weight: bold; border-radius: 6px; cursor: pointer; flex: 1; text-align: center; }
         .tab-btn.active-tab { background: #e67e22; color: white; }
         
-        /* Resumen de deudas global y por cliente */
-        .banner-deuda-global { background: #fadbd8; border: 2px dashed #e74c3c; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 25px; }
-        .banner-deuda-global h3 { margin: 0; color: #78281f; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        /* Tarjeta Exclusiva de Deuda Total Global en Inventario Carne */
+        .banner-deuda-global { background: #fdf2e9; border: 2px dashed #e74c3c; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 25px; }
+        .banner-deuda-global h3 { margin: 0; color: #78281f; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; }
         .banner-deuda-global .monto-global { font-size: 32px; font-weight: bold; color: #c0392b; margin-top: 5px; }
 
+        /* Tarjetas de Clientes Individuales */
         .contenedor-resumen-clientes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
         .tarjeta-cliente { background: #fdfefe; border: 1px solid #d5dbdb; border-top: 4px solid #e74c3c; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .tarjeta-cliente h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; border-bottom: 1px dashed #e5e7e9; padding-bottom: 5px; text-transform: uppercase; }
@@ -38,7 +38,7 @@
         form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; align-items: center; }
         .box-excel { background: #eef9f1; border: 1px dashed #27ae60; padding: 15px; border-radius: 8px; margin-bottom: 30px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         
-        /* Barrita de Filtros Rango de Fecha */
+        /* Barrita de Filtros Rango de Fecha y Cliente */
         .box-filtro { background: #ebf5fb; border: 1px solid #a9cce3; padding: 12px 18px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         .box-filtro label { font-weight: bold; color: #2980b9; font-size: 13px; }
         .grupo-filtro { display: flex; align-items: center; gap: 6px; }
@@ -73,15 +73,11 @@
 <div class="container">
     <h1>Control Financiero - Módulo Carne 🥩</h1>
     
-    <!-- DASHBOARD LOCAL CARNE -->
+    <!-- DASHBOARD SUPERIOR (SOLO TOTAL ABONADO CARNE) -->
     <div class="dashboard-grid">
         <div class="dash-card">
             <h3>🥩 Total Abonado Carne</h3>
             <p id="saldo-carne">$0.00</p>
-        </div>
-        <div class="dash-card deuda-card">
-            <h3>🚨 Deuda Total Pendiente</h3>
-            <p id="deuda-carne-global" style="color: #c0392b;">$0.00</p>
         </div>
     </div>
 
@@ -111,7 +107,7 @@
         <button type="submit">Registrar</button>
     </form>
 
-    <!-- CARNE CLIENTE -->
+    <!-- PESTAÑA 1: CLIENTE CARNE -->
     <div id="vista-carne-cliente" class="vista-seccion vista-activa">
         <h2>Reporte Diario: Historial de Notas de Clientes 🥩</h2>
 
@@ -160,19 +156,18 @@
         </div>
     </div>
 
-    <!-- INVENTARIO -->
+    <!-- PESTAÑA 2: INVENTARIO CARNE -->
     <div id="vista-carne-inventario" class="vista-seccion">
-        <h2>Inventario Carne & Resumen de Cuentas 🥩</h2>
+        <h2>Inventario Carne & Resumen de Deudas 🥩</h2>
 
-        <!-- SECCIÓN DE RESUMEN CARNE DEUDAS -->
+        <!-- APARTADO EXCLUSIVO DE DEUDA TOTAL DE TODOS LOS CLIENTES -->
         <div id="bloque-resumen-clientes">
-            <!-- BANNER DE TOTAL ACUMULADO DE TODAS LAS DEUDAS -->
             <div class="banner-deuda-global">
-                <h3>📌 TOTAL GLOBAL DE DEUDAS PENDIENTES (TODOS LOS CLIENTES)</h3>
+                <h3>🚨 TOTAL DE DEUDAS DE TODOS LOS CLIENTES (PENDIENTE POR COBRAR)</h3>
                 <div class="monto-global" id="monto-deuda-total-banner">$0.00</div>
             </div>
 
-            <h2>📊 Estado de Cuentas Individuales por Cliente</h2>
+            <h2>📊 Estado de Cuentas Acumuladas por Cliente</h2>
             <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
         </div>
     </div>
@@ -268,20 +263,14 @@
 
     function calcularSaldosYTotales() {
         let totalAbonadoCarne = 0;
-        let totalCompradoCarne = 0;
 
         movimientos.forEach(mov => {
             if (mov.subTipo === 'cliente') {
                 totalAbonadoCarne += parseFloat(mov.abono || 0);
-                totalCompradoCarne += parseFloat(mov.montoCalculado || 0);
             }
         });
 
-        let deudaTotalGlobal = totalCompradoCarne - totalAbonadoCarne;
-        if (deudaTotalGlobal < 0) deudaTotalGlobal = 0;
-
         document.getElementById('saldo-carne').innerText = formatearMoneda(totalAbonadoCarne);
-        document.getElementById('deuda-carne-global').innerText = formatearMoneda(deudaTotalGlobal);
     }
 
     function actualizarSelectClientesFiltro() {
@@ -371,7 +360,6 @@
             const info = cuentasClientes[nombre];
             const saldoTotalPendiente = info.comprado - info.abonado;
 
-            // Si el cliente tiene saldo a favor o deba, lo sumamos al total si es pendiente positivo
             if (saldoTotalPendiente > 0) {
                 sumaDeudasGlobal += saldoTotalPendiente;
             }
@@ -394,7 +382,7 @@
             contenedor.appendChild(div);
         });
 
-        // Actualizar el banner con la suma global
+        // Actualizar el valor total del recuadro rojo de Inventario Carne
         bannerMontoGlobal.innerText = formatearMoneda(sumaDeudasGlobal);
 
         if (listaNombres.length === 0) {
