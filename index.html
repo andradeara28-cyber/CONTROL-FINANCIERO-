@@ -131,7 +131,6 @@
         <input type="date" id="fecha" required>
         
         <select id="negocio" onchange="ajustarCamposFormulario()" required>
-            <option value="" disabled selected>Selecciona el Negocio</option>
             <option value="Carne">🥩 Carne</option>
             <option value="Forrajera">🌾 Forrajera</option>
             <option value="Tuna">🌵 Tuna</option>
@@ -175,7 +174,7 @@
                 <p id="forrajera-total-entradas" class="monto-ingreso">$0.00</p>
             </div>
             <div class="card-resumen-sm" style="border-top: 4px solid #e74c3c;">
-                <h4>📤 Total Salidas (Gastos)</h4>
+                <h4>📤 Total Salidas (Gastos/Inversión)</h4>
                 <p id="forrajera-total-salidas" class="monto-egreso">$0.00</p>
             </div>
             <div class="card-resumen-sm" style="border-top: 4px solid #f1c40f;">
@@ -268,7 +267,7 @@
 
     localStorage.setItem(CLAVE_B, JSON.stringify(movimientos));
 
-    let filtroActual = 'Todos';
+    let filtroActual = 'Forrajera'; // Inicia en Forrajera por comodidad
     let subTabCarneActual = 'cliente';
 
     const form = document.getElementById('registro-form');
@@ -328,12 +327,14 @@
             camposDinamicos.innerHTML = `
                 <select id="f_tipo" required>
                     <option value="Ingreso">📥 Entrada (Venta)</option>
+                    <option value="Revoltura">🌾 Revoltura</option>
+                    <option value="Inversion">💼 Inversión / Compras</option>
                     <option value="Egreso">📤 Salida (Gasto)</option>
                 </select>
                 <input type="text" id="f_cliente" placeholder="Nombre Cliente / Proveedor" required>
                 <input type="text" id="f_concepto" placeholder="Concepto Detalle" required>
-                <input type="number" id="f_cantidad" placeholder="Cantidad" min="0.01" step="0.01" required>
-                <input type="number" id="f_precio" placeholder="Precio ($)" min="0.01" step="0.01" required>
+                <input type="number" id="f_cantidad" placeholder="Cantidad" min="0" step="0.01" value="1">
+                <input type="number" id="f_precio" placeholder="Precio ($)" min="0" step="0.01" required>
             `;
         } else {
             camposDinamicos.innerHTML = `
@@ -361,6 +362,13 @@
         document.querySelectorAll('.dash-card').forEach(card => card.classList.remove('active-filter'));
         document.getElementById(`card-${area}`).classList.add('active-filter');
         pestanasCarne.style.display = (area === 'Carne') ? 'flex' : 'none';
+        
+        // Sincronizar el selector del formulario con la pestaña activa
+        if (area !== 'Todos') {
+            selectNegocio.value = area;
+            ajustarCamposFormulario();
+        }
+        
         actualizarVistasTablas();
     }
 
@@ -392,10 +400,13 @@
                 }
             } else {
                 let valor = parseFloat(mov.monto || 0);
-                if ((mov.tipo || 'Ingreso') === 'Ingreso') {
-                    saldos[mov.negocio] += valor; totalGeneral += valor;
+                let tipo = mov.tipo || 'Ingreso';
+                if (tipo === 'Ingreso' || tipo === 'Revoltura') {
+                    saldos[mov.negocio] += valor; 
+                    totalGeneral += valor;
                 } else {
-                    saldos[mov.negocio] -= valor; totalGeneral -= valor;
+                    saldos[mov.negocio] -= valor; 
+                    totalGeneral -= valor;
                 }
             }
         });
@@ -533,9 +544,11 @@
             let m = parseFloat(mov.monto || 0);
             let cant = parseFloat(mov.cantidad || 0);
             let precio = parseFloat(mov.precio || 0);
-            let esIngreso = (mov.tipo || 'Ingreso') === 'Ingreso';
+            let tipo = mov.tipo || 'Ingreso';
 
-            if (esIngreso) {
+            let esEntrada = (tipo === 'Ingreso' || tipo === 'Revoltura');
+
+            if (esEntrada) {
                 totalEntradas += m;
                 let clienteNom = (mov.cliente || 'VARIOS').toUpperCase().trim();
                 if (!acumuladoClientes[clienteNom]) acumuladoClientes[clienteNom] = 0;
@@ -544,14 +557,19 @@
                 totalSalidas += m;
             }
 
+            let badgeTexto = '📥 Entrada';
+            if (tipo === 'Revoltura') badgeTexto = '🌾 Revoltura';
+            else if (tipo === 'Inversion') badgeTexto = '💼 Inversión';
+            else if (tipo === 'Egreso') badgeTexto = '📤 Salida';
+
             tr.innerHTML = `
                 <td>${formatearFecha(mov.fecha)}</td>
-                <td><span class="badge ${esIngreso ? 'badge-pago' : 'badge-negocio'}">${esIngreso ? '📥 Entrada' : '📤 Salida'}</span></td>
+                <td><span class="badge ${esEntrada ? 'badge-pago' : 'badge-negocio'}">${badgeTexto}</span></td>
                 <td><strong>${mov.cliente}</strong></td>
                 <td>${mov.concepto}</td>
                 <td>${cant > 0 ? cant : '-'}</td>
                 <td>${precio > 0 ? formatearMoneda(precio) : '-'}</td>
-                <td class="${esIngreso ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(m)}</td>
+                <td class="${esEntrada ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(m)}</td>
                 <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">🗑️</button></td>
             `;
             tbody.appendChild(tr);
@@ -688,7 +706,7 @@
                         agregados++;
                     } 
                     else if (destino === 'Forrajera') {
-                        let cant = parseFloat(rowNorm['cantidad'] || rowNorm['cant'] || 0);
+                        let cant = parseFloat(rowNorm['cantidad'] || rowNorm['cant'] || 1);
                         let precio = parseFloat(rowNorm['precio'] || 0);
                         let total = cant * precio;
                         if(total === 0) total = parseFloat(rowNorm['monto'] || rowNorm['total'] || 0);
@@ -785,6 +803,7 @@
         movimientos.push(nuevoMov);
         movimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
         
+        // Mantener la pantalla y el formulario fijos en la pestaña seleccionada
         filtrarPorArea(area);
 
         form.reset();
@@ -801,10 +820,9 @@
         }
     }
 
+    // Inicializar directo en Forrajera para tu comodidad
     establecerFechaDeHoy();
-    selectNegocio.value = "Carne";
-    filtrarPorArea("Todos");
-    ajustarCamposFormulario();
+    filtrarPorArea("Forrajera");
 </script>
 
 </body>
