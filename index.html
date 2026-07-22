@@ -19,7 +19,7 @@
         .tab-btn { padding: 12px 20px; border: none; background: #e0e6ed; color: #34495e; font-weight: bold; border-radius: 6px; cursor: pointer; flex: 1; text-align: center; font-size: 15px; transition: all 0.2s; }
         .tab-btn.active-tab { background: #e67e22; color: white; box-shadow: 0 2px 4px rgba(230, 126, 34, 0.3); }
 
-        /* NUEVO FORMULARIO DE REGISTRO AMPLIO Y VISTOSO (PESTAÑA 1) */
+        /* FORMULARIO DE REGISTRO AMPLIO Y VISTOSO (PESTAÑA 1) */
         .registro-card-container {
             max-width: 750px;
             margin: 20px auto;
@@ -108,11 +108,93 @@
         .dash-card.deuda p { color: #c0392b; }
         .dash-card.abonado p { color: #27ae60; }
 
-        /* Barrita de Porcentaje de Cobranza */
-        .box-cobranza-bar { background: #f8f9fa; border: 1px solid #e1e8ed; padding: 15px; border-radius: 8px; margin-bottom: 25px; }
-        .cobranza-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 8px; }
-        .progress-container { background: #e74c3c; height: 18px; border-radius: 9px; overflow: hidden; width: 100%; display: flex; }
-        .progress-bar-fill { background: #2ecc71; height: 100%; transition: width 0.4s ease; }
+        /* BARRA DE COBRANZA MEJORADA Y CLARA */
+        .box-cobranza-bar { 
+            background: #ffffff; 
+            border: 1px solid #e1e8ed; 
+            padding: 18px 22px; 
+            border-radius: 12px; 
+            margin-bottom: 25px; 
+            box-shadow: 0 3px 8px rgba(0,0,0,0.03);
+        }
+
+        .cobranza-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px; 
+        }
+
+        .cobranza-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .cobranza-badges {
+            display: flex;
+            gap: 10px;
+        }
+
+        .badge-cobrado {
+            background: #e8f8f5;
+            color: #1e8449;
+            border: 1px solid #a3e4d7;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .badge-pendiente {
+            background: #fdf2e9;
+            color: #c0392b;
+            border: 1px solid #fadbd8;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .progress-container { 
+            background: #e74c3c; 
+            height: 26px; 
+            border-radius: 13px; 
+            overflow: hidden; 
+            width: 100%; 
+            display: flex; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .progress-bar-fill { 
+            background: linear-gradient(90deg, #2ecc71, #27ae60); 
+            height: 100%; 
+            transition: width 0.5s ease; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .progress-bar-pending {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            flex: 1;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+        }
 
         /* Tarjetas de Clientes Individuales */
         .contenedor-resumen-clientes { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px; margin-top: 15px; margin-bottom: 35px; }
@@ -150,7 +232,6 @@
         .btn-pdf:hover { background: #c0392b; }
         .hora-badge { font-weight: bold; color: #7f8c8d; font-size: 13px; }
 
-        /* Contenedor Botón PDF Abajo */
         .acciones-tabla-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 10px; margin-bottom: 25px; }
     </style>
 </head>
@@ -212,14 +293,25 @@
             </div>
         </div>
 
-        <!-- BARRA DE PORCENTAJE DE COBRANZA -->
+        <!-- BARRA DE PORCENTAJE DE COBRANZA MEJORADA -->
         <div class="box-cobranza-bar">
             <div class="cobranza-header">
-                <span>📊 Nivel de Cobranza General:</span>
-                <span id="texto-cobranza-pct">Abonado: 0% | Pendiente: 100%</span>
+                <span class="cobranza-title">📊 Avance de Cobranza Global:</span>
+                <div class="cobranza-badges">
+                    <span class="badge-cobrado" id="badge-monto-cobrado">🟢 Cobrado: $0.00 (0%)</span>
+                    <span class="badge-pendiente" id="badge-monto-pendiente">🔴 Por Cobrar: $0.00 (100%)</span>
+                </div>
             </div>
+            
             <div class="progress-container">
-                <div class="progress-bar-fill" id="bar-cobranza-fill" style="width: 0%;"></div>
+                <!-- Parte Verde (Cobrado) -->
+                <div class="progress-bar-fill" id="bar-cobranza-fill" style="width: 0%;">
+                    <span id="txt-bar-cobrado"></span>
+                </div>
+                <!-- Parte Roja (Pendiente) -->
+                <div class="progress-bar-pending" id="bar-cobranza-pending">
+                    <span id="txt-bar-pendiente"></span>
+                </div>
             </div>
         </div>
 
@@ -642,9 +734,9 @@
         document.getElementById('saldo-carne').innerText = formatearMoneda(totalAbonadoCarne);
         document.getElementById('deuda-total-carne').innerText = formatearMoneda(deudaTotal > 0 ? deudaTotal : 0);
 
-        // Actualizar barra de Porcentaje de Cobranza
+        // LÓGICA DE BARRA Y BADGES
         let pctAbonado = 0;
-        let pctPendiente = 0;
+        let pctPendiente = 100;
 
         if (totalVentasBrutas > 0) {
             pctAbonado = (totalAbonadoCarne / totalVentasBrutas) * 100;
@@ -652,8 +744,17 @@
             pctPendiente = 100 - pctAbonado;
         }
 
-        document.getElementById('bar-cobranza-fill').style.width = `${pctAbonado.toFixed(1)}%`;
-        document.getElementById('texto-cobranza-pct').innerText = `Abonado: ${pctAbonado.toFixed(1)}%  |  Pendiente: ${pctPendiente.toFixed(1)}%`;
+        // Actualizar Badges con montos reales
+        document.getElementById('badge-monto-cobrado').innerText = `🟢 Cobrado: ${formatearMoneda(totalAbonadoCarne)} (${pctAbonado.toFixed(1)}%)`;
+        document.getElementById('badge-monto-pendiente').innerText = `🔴 Por Cobrar: ${formatearMoneda(deudaTotal > 0 ? deudaTotal : 0)} (${pctPendiente.toFixed(1)}%)`;
+
+        // Actualizar la Barra
+        const fillBar = document.getElementById('bar-cobranza-fill');
+        fillBar.style.width = `${pctAbonado.toFixed(1)}%`;
+
+        // Texto dentro de las barras (solo si cabe el espacio)
+        document.getElementById('txt-bar-cobrado').innerText = pctAbonado >= 12 ? `${pctAbonado.toFixed(1)}%` : '';
+        document.getElementById('txt-bar-pendiente').innerText = pctPendiente >= 12 ? `${pctPendiente.toFixed(1)}%` : '';
     }
 
     function actualizarSelectClientesFiltro() {
@@ -702,14 +803,12 @@
         aplicarFiltros();
     };
 
-    // FUNCIÓN PARA VER DESGLOSE DE CLIENTE DESDE LA TARJETA
     window.irADetalleCliente = function(nombreCliente) {
         cambiarSubTabCarne('inventario');
         document.getElementById('filtro-cliente-select').value = nombreCliente;
         document.getElementById('filtro-cliente-input').value = '';
         aplicarFiltros();
         
-        // Auto-scroll suave hasta la tabla de historial
         document.getElementById('filtro-cliente-select').scrollIntoView({ behavior: 'smooth' });
     };
 
