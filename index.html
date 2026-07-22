@@ -172,7 +172,25 @@
 
 </div>
 
-<script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// Configuración de Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyCD-o8EvCSkEVMh74e68jqtHnol5Gfp3WA",
+  authDomain: "distribuidora-piramides.firebaseapp.com",
+  projectId: "distribuidora-piramides",
+  storageBucket: "distribuidora-piramides.firebasestorage.app",
+  messagingSenderId: "47623676911",
+  appId: "1:47623676911:web:f0e82a085a9bb380f68c1a"
+};
+
+// Inicializar
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+
     const CLAVE_STORAGE = 'movimientos_carne_v1';
     
     let datosGuardados = localStorage.getItem(CLAVE_STORAGE);
@@ -541,7 +559,7 @@
         reader.readAsArrayBuffer(file);
     }
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         if (subTabCarneActual !== 'cliente') return;
@@ -572,7 +590,8 @@
             nuevoMov.isAbonoPuro = true;
         }
 
-        movimientos.unshift(nuevoMov);
+        // En lugar de movimientos.unshift(nuevoMov);
+        await addDoc(collection(db, "movimientos"), nuevoMov);
 
         form.reset();
         establecerFechaDeHoy();
@@ -590,7 +609,14 @@
     // Inicialización
     establecerFechaDeHoy();
     ajustarCamposFormulario();
-    actualizarVistasTablas();
+    // Cargar y escuchar datos de Firebase en tiempo real
+onSnapshot(collection(db, "movimientos"), (snapshot) => {
+  movimientos = snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+  actualizarVistasTablas();
+});
 </script>
 
 </body>
