@@ -56,7 +56,7 @@
         .btn-limpiar:hover { background-color: #7f8c8d; }
         
         /* Tablas */
-        .table-responsive { overflow-x: auto; margin-bottom: 25px; }
+        .table-responsive { overflow-x: auto; margin-bottom: 15px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e1e8ed; font-size: 14px; }
         th { background-color: #f8f9fa; color: #2c3e50; }
@@ -68,9 +68,12 @@
         .monto-ingreso { color: #2ecc71; font-weight: bold; }
         .monto-egreso { color: #e74c3c; font-weight: bold; }
         .btn-borrar { background: none; color: #e74c3c; border: none; cursor: pointer; padding: 0; font-size: 14px; }
-        .btn-pdf { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .btn-pdf { background: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
         .btn-pdf:hover { background: #c0392b; }
         .hora-badge { font-weight: bold; color: #7f8c8d; font-size: 13px; }
+
+        /* Contenedor Botón PDF Abajo */
+        .acciones-tabla-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 10px; margin-bottom: 25px; }
     </style>
 </head>
 <body>
@@ -145,12 +148,16 @@
                         <th>Total Nota</th>
                         <th>Abono</th>
                         <th>Saldo Nota</th>
-                        <th>Historial PDF</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="carne-cliente-cuerpo"></tbody>
             </table>
+        </div>
+
+        <!-- BOTÓN DE PDF GLOBAL ABAJO DE LA TABLA -->
+        <div class="acciones-tabla-footer">
+            <button type="button" class="btn-pdf" onclick="generarPDFFiltrado()">📄 Descargar PDF de los Registros Filtrados</button>
         </div>
     </div>
 
@@ -261,25 +268,23 @@
         return `${texto.trim()} PESOS ${strCentavos}`;
     }
 
-    // --- NUEVA FUNCIÓN PARA GENERAR NOTA HISTÓRICA DE TODO LO QUE DEBE Y COMPRÓ EL CLIENTE ---
-    window.generarPDFNota = function(idClienteOCliente) {
-        let clienteNombre = "";
-        const movEncontrado = movimientos.find(m => m.id === idClienteOCliente);
-        if (movEncontrado) {
-            clienteNombre = movEncontrado.cliente;
-        } else {
-            clienteNombre = idClienteOCliente;
-        }
+    // --- FUNCIÓN PARA GENERAR PDF EXCLUSIVAMENTE CON LO FILTRADO EN PANTALLA ---
+    window.generarPDFFiltrado = function() {
+        const clienteSelect = document.getElementById('filtro-cliente-select').value.toUpperCase().trim();
+        const clienteInput = document.getElementById('filtro-cliente-input').value.toUpperCase().trim();
+        const filtroCliente = clienteSelect || clienteInput;
 
-        if (!clienteNombre) return;
+        // Filtrar según lo visible en la vista
+        const datosFiltrados = movimientos.filter(mov => {
+            if (mov.subTipo !== 'cliente') return false;
+            let clienteNombre = (mov.cliente || '').toUpperCase();
+            if (filtroCliente && !clienteNombre.includes(filtroCliente)) return false;
+            if (!coincideRangoFecha(mov.fecha)) return false;
+            return true;
+        }).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
-        // Filtrar TODOS los movimientos de este cliente
-        const historialCliente = movimientos
-            .filter(m => m.subTipo === 'cliente' && m.cliente.toUpperCase().trim() === clienteNombre.toUpperCase().trim())
-            .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-
-        if (historialCliente.length === 0) {
-            alert("No se encontraron registros para este cliente.");
+        if (datosFiltrados.length === 0) {
+            alert("No hay registros en la lista con los filtros seleccionados.");
             return;
         }
 
@@ -289,7 +294,7 @@
         const colorAzul = [18, 52, 102];
         const colorNaranja = [220, 100, 20];
 
-        // Encabezado
+        // Encabezado Empresa
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(...colorNaranja);
@@ -305,7 +310,7 @@
         doc.text("San Martín de las Pirámides, Edo. de México. Calle Francisco Villa S/N", 105, 23, { align: "center" });
         doc.text("Juan Hernández: 5526863228  |  Hugo Hernández: 5554142921  |  Oficina: 5949584139", 105, 27, { align: "center" });
 
-        // Caja de Datos Cliente
+        // Caja Titular/Filtro
         doc.setDrawColor(...colorAzul);
         doc.setFillColor(245, 247, 250);
         doc.roundedRect(12, 32, 188, 20, 2, 2, "FD");
@@ -313,13 +318,13 @@
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
         doc.setTextColor(...colorAzul);
-        doc.text("ESTADO DE CUENTA / HISTORIAL GENERAL DE NOTAS", 16, 39);
+        doc.text("REPORTE DE MOVIMIENTOS Y NOTAS", 16, 39);
 
         doc.setFontSize(9);
         doc.setTextColor(...colorNaranja);
-        doc.text("CLIENTE:", 16, 46);
+        doc.text("CLIENTE / FILTRO:", 16, 46);
         doc.setTextColor(0, 0, 0);
-        doc.text(clienteNombre.toUpperCase(), 34, 46);
+        doc.text(filtroCliente ? filtroCliente : "TODOS LOS CLIENTES", 48, 46);
 
         const hoy = new Date().toLocaleDateString('es-MX');
         doc.setTextColor(...colorAzul);
@@ -327,22 +332,23 @@
         doc.setTextColor(0, 0, 0);
         doc.text(hoy, 170, 46);
 
-        // Armar filas de la tabla
-        let totalCompradoAcumulado = 0;
-        let totalAbonadoAcumulado = 0;
+        // Filas Tabla
+        let totalComprado = 0;
+        let totalAbonado = 0;
 
-        const filasTabla = historialCliente.map(mov => {
+        const filasTabla = datosFiltrados.map(mov => {
             const totalNota = parseFloat(mov.montoCalculado || 0);
             const abonoNota = parseFloat(mov.abono || 0);
 
-            totalCompradoAcumulado += totalNota;
-            totalAbonadoAcumulado += abonoNota;
+            totalComprado += totalNota;
+            totalAbonado += abonoNota;
 
             const pesoStr = mov.isAbonoPuro ? '-' : `${parseFloat(mov.peso || 0).toFixed(3)} KG`;
             const precioStr = mov.isAbonoPuro ? '-' : formatearMoneda(parseFloat(mov.precio || 0));
 
             return [
                 formatearFecha(mov.fecha),
+                mov.cliente,
                 mov.concepto || (mov.isAbonoPuro ? 'ABONO A CUENTA' : 'COMPRA'),
                 mov.metodoPago || 'Efectivo',
                 pesoStr,
@@ -352,11 +358,11 @@
             ];
         });
 
-        const saldoPendienteFinal = totalCompradoAcumulado - totalAbonadoAcumulado;
+        const saldoPendiente = totalComprado - totalAbonado;
 
         doc.autoTable({
             startY: 56,
-            head: [['FECHA', 'CONCEPTO / DETALLE', 'PAGO', 'PESO', 'PRECIO U.', 'TOTAL NOTA', 'ABONADO']],
+            head: [['FECHA', 'CLIENTE', 'DETALLE', 'PAGO', 'PESO', 'PRECIO', 'TOTAL', 'ABONADO']],
             body: filasTabla,
             theme: 'grid',
             headStyles: {
@@ -371,13 +377,14 @@
                 textColor: [30, 30, 30]
             },
             columnStyles: {
-                0: { halign: 'center', cellWidth: 22 },
-                1: { halign: 'left' },
-                2: { halign: 'center', cellWidth: 22 },
-                3: { halign: 'right', cellWidth: 20 },
-                4: { halign: 'right', cellWidth: 22 },
-                5: { halign: 'right', cellWidth: 25 },
-                6: { halign: 'right', cellWidth: 25 }
+                0: { halign: 'center', cellWidth: 20 },
+                1: { halign: 'left', cellWidth: 30 },
+                2: { halign: 'left' },
+                3: { halign: 'center', cellWidth: 20 },
+                4: { halign: 'right', cellWidth: 18 },
+                5: { halign: 'right', cellWidth: 20 },
+                6: { halign: 'right', cellWidth: 22 },
+                7: { halign: 'right', cellWidth: 22 }
             },
             margin: { left: 12, right: 12 }
         });
@@ -389,7 +396,7 @@
             finalY = 20;
         }
 
-        // Totales y Saldo
+        // Totales al pie del PDF
         doc.setFillColor(245, 247, 250);
         doc.setDrawColor(200, 200, 200);
         doc.rect(110, finalY, 90, 30, "FD");
@@ -398,32 +405,33 @@
         doc.setFont("helvetica", "bold");
         doc.setTextColor(50, 50, 50);
 
-        doc.text("TOTAL COMPRADO:", 114, finalY + 7);
-        doc.text(formatearMoneda(totalCompradoAcumulado), 195, finalY + 7, { align: "right" });
+        doc.text("TOTAL COMPRAS:", 114, finalY + 7);
+        doc.text(formatearMoneda(totalComprado), 195, finalY + 7, { align: "right" });
 
         doc.text("TOTAL ABONADO:", 114, finalY + 14);
         doc.setTextColor(39, 174, 96);
-        doc.text(formatearMoneda(totalAbonadoAcumulado), 195, finalY + 14, { align: "right" });
+        doc.text(formatearMoneda(totalAbonado), 195, finalY + 14, { align: "right" });
 
         doc.setFontSize(9);
         doc.setTextColor(192, 57, 43);
         doc.text("SALDO PENDIENTE:", 114, finalY + 23);
-        doc.text(formatearMoneda(saldoPendienteFinal), 195, finalY + 23, { align: "right" });
+        doc.text(formatearMoneda(saldoPendiente), 195, finalY + 23, { align: "right" });
 
         doc.setFontSize(7);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(80, 80, 80);
         doc.text("SALDO PENDIENTE CON LETRA:", 12, finalY + 7);
         doc.setFont("helvetica", "normal");
-        doc.text(numeroALetras(saldoPendienteFinal > 0 ? saldoPendienteFinal : 0), 12, finalY + 12);
+        doc.text(numeroALetras(saldoPendiente > 0 ? saldoPendiente : 0), 12, finalY + 12);
 
         doc.setDrawColor(150, 150, 150);
         doc.line(25, finalY + 32, 75, finalY + 32);
         doc.setFontSize(7);
         doc.setTextColor(100, 100, 100);
-        doc.text("FIRMA DE CONFORMIDAD DEL CLIENTE", 50, finalY + 36, { align: "center" });
+        doc.text("FIRMA DE CONFORMIDAD", 50, finalY + 36, { align: "center" });
 
-        doc.save(`Estado_De_Cuenta_${clienteNombre.replace(/\s+/g, '_')}.pdf`);
+        const nombreArchivo = filtroCliente ? `Reporte_${filtroCliente.replace(/\s+/g, '_')}.pdf` : `Reporte_General_Carne.pdf`;
+        doc.save(nombreArchivo);
     };
 
     window.ajustarCamposFormulario = function() {
@@ -611,9 +619,6 @@
                         ${formatearMoneda(saldoTotalPendiente)}
                     </span>
                 </div>
-                <div style="margin-top: 12px; text-align: center;">
-                    <button class="btn-pdf" onclick="generarPDFNota('${nombre}')">📑 Descargar Estado de Cuenta PDF</button>
-                </div>
             `;
             contenedor.appendChild(div);
         });
@@ -679,14 +684,13 @@
                 <td style="font-weight:bold; color:#2c3e50;">${formatearMoneda(total)}</td>
                 <td class="monto-ingreso">${formatearMoneda(abono)}</td>
                 <td class="${saldo <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldo)}</td>
-                <td><button class="btn-pdf" onclick="generarPDFNota('${mov.id}')">📄 PDF Histórico</button></td>
                 <td><button class="btn-borrar" onclick="eliminarMovimiento('${mov.id}')">🗑️</button></td>
             `;
             tbody.appendChild(tr);
         });
 
         if (visibles === 0) {
-            tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; color:#7f8c8d; font-style:italic; padding: 20px;">No se encontraron notas o pagos para las fechas y clientes seleccionados.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#7f8c8d; font-style:italic; padding: 20px;">No se encontraron notas o pagos para las fechas y clientes seleccionados.</td></tr>`;
         }
     }
 
