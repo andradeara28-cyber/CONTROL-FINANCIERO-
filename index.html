@@ -17,13 +17,23 @@
         h2 { color: #2c3e50; border-bottom: 2px solid #e1e8ed; padding-bottom: 8px; margin-top: 30px; }
         
         /* Dashboard Exclusivo dentro de Pestaña 2 (Inventario Global) */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px; margin-top: 15px; }
-        .dash-card { background: #eef2f7; padding: 20px; border-radius: 8px; text-align: center; border-left: 5px solid #e67e22; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px; margin-top: 15px; }
+        .dash-card { background: #eef2f7; padding: 18px; border-radius: 8px; text-align: center; border-left: 5px solid #2980b9; }
+        .dash-card.kilos { border-left-color: #8e44ad; }
+        .dash-card.abonado { border-left-color: #27ae60; background: #eafaf1; }
         .dash-card.deuda { background: #fdf2e9; border-left-color: #e74c3c; }
-        .dash-card h3 { margin: 0; color: #7f8c8d; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .dash-card h3 { margin: 0; color: #7f8c8d; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
         .dash-card.deuda h3 { color: #a93226; }
-        .dash-card p { margin: 8px 0 0 0; font-size: 26px; font-weight: bold; color: #2c3e50; }
+        .dash-card.abonado h3 { color: #1e8449; }
+        .dash-card p { margin: 8px 0 0 0; font-size: 22px; font-weight: bold; color: #2c3e50; }
         .dash-card.deuda p { color: #c0392b; }
+        .dash-card.abonado p { color: #27ae60; }
+
+        /* Barrita de Porcentaje de Cobranza */
+        .box-cobranza-bar { background: #f8f9fa; border: 1px solid #e1e8ed; padding: 15px; border-radius: 8px; margin-bottom: 25px; }
+        .cobranza-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+        .progress-container { background: #e74c3c; height: 18px; border-radius: 9px; overflow: hidden; width: 100%; display: flex; }
+        .progress-bar-fill { background: #2ecc71; height: 100%; transition: width 0.4s ease; }
 
         /* Pestañas de Carne */
         .sub-tabs-carne { display: flex; gap: 10px; margin-bottom: 25px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e1e8ed; }
@@ -31,11 +41,14 @@
         .tab-btn.active-tab { background: #e67e22; color: white; }
 
         /* Tarjetas de Clientes Individuales */
-        .contenedor-resumen-clientes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
-        .tarjeta-cliente { background: #fdfefe; border: 1px solid #d5dbdb; border-top: 4px solid #e74c3c; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .contenedor-resumen-clientes { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px; margin-top: 15px; }
+        .tarjeta-cliente { background: #fdfefe; border: 1px solid #d5dbdb; border-top: 4px solid #e74c3c; padding: 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between; }
         .tarjeta-cliente h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; border-bottom: 1px dashed #e5e7e9; padding-bottom: 5px; text-transform: uppercase; }
         .tarjeta-cliente p { margin: 5px 0; font-size: 13px; color: #566573; display: flex; justify-content: space-between; }
-        .tarjeta-cliente .saldo-acumulado { font-size: 15px; font-weight: bold; margin-top: 10px; padding-top: 5px; border-top: 1px solid #eaeded; display: flex; justify-content: space-between; }
+        .tarjeta-cliente .saldo-acumulado { font-size: 15px; font-weight: bold; margin-top: 10px; padding-top: 6px; border-top: 1px solid #eaeded; display: flex; justify-content: space-between; }
+        .tarjeta-cliente .info-ultimo-mov { font-size: 11px; color: #7f8c8d; font-style: italic; margin-top: 4px; text-align: right; }
+        .btn-ver-desglose { margin-top: 12px; background: #34495e; color: white; border: none; padding: 8px; border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; text-align: center; }
+        .btn-ver-desglose:hover { background: #2c3e50; }
 
         /* Formulario e Importador */
         form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; align-items: center; }
@@ -165,8 +178,17 @@
     <div id="vista-carne-inventario" class="vista-seccion">
         <h2>Inventario Global 🥩</h2>
 
+        <!-- DASHBOARD GLOBAL COMPLETO -->
         <div class="dashboard-grid">
             <div class="dash-card">
+                <h3>💰 TOTAL VENTAS BRUTAS</h3>
+                <p id="total-ventas-carne">$0.00</p>
+            </div>
+            <div class="dash-card kilos">
+                <h3>⚖️ TOTAL KILOS VENDIDOS</h3>
+                <p id="total-kilos-carne">0.000 KG</p>
+            </div>
+            <div class="dash-card abonado">
                 <h3>🥩 TOTAL ABONADO CARNE</h3>
                 <p id="saldo-carne">$0.00</p>
             </div>
@@ -176,8 +198,25 @@
             </div>
         </div>
 
+        <!-- BARRA DE PORCENTAJE DE COBRANZA -->
+        <div class="box-cobranza-bar">
+            <div class="cobranza-header">
+                <span>📊 Nivel de Cobranza General:</span>
+                <span id="texto-cobranza-pct">Abonado: 0% | Pendiente: 100%</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar-fill" id="bar-cobranza-fill" style="width: 0%;"></div>
+            </div>
+        </div>
+
         <div id="bloque-resumen-clientes">
-            <h2>📊 Estado de Cuentas Individuales por Cliente</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                <h2 style="margin: 0; border: none;">📊 Estado de Cuentas Individuales por Cliente</h2>
+                <!-- BUSCADOR DENTRO DE INVENTARIO GLOBAL -->
+                <div style="width: 260px;">
+                    <input type="text" id="buscar-cliente-inv" placeholder="🔍 Buscar cliente en tarjetas..." oninput="renderizarResumenClientesAcumulado()">
+                </div>
+            </div>
             <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
         </div>
     </div>
@@ -268,13 +307,12 @@
         return `${texto.trim()} PESOS ${strCentavos}`;
     }
 
-    // --- FUNCIÓN PARA GENERAR PDF EXCLUSIVAMENTE CON LO FILTRADO EN PANTALLA ---
+    // PDF GENERADOR
     window.generarPDFFiltrado = function() {
         const clienteSelect = document.getElementById('filtro-cliente-select').value.toUpperCase().trim();
         const clienteInput = document.getElementById('filtro-cliente-input').value.toUpperCase().trim();
         const filtroCliente = clienteSelect || clienteInput;
 
-        // Filtrar según lo visible en la vista
         const datosFiltrados = movimientos.filter(mov => {
             if (mov.subTipo !== 'cliente') return false;
             let clienteNombre = (mov.cliente || '').toUpperCase();
@@ -294,7 +332,6 @@
         const colorAzul = [18, 52, 102];
         const colorNaranja = [220, 100, 20];
 
-        // Encabezado Empresa
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(...colorNaranja);
@@ -310,7 +347,6 @@
         doc.text("San Martín de las Pirámides, Edo. de México. Calle Francisco Villa S/N", 105, 23, { align: "center" });
         doc.text("Juan Hernández: 5526863228  |  Hugo Hernández: 5554142921  |  Oficina: 5949584139", 105, 27, { align: "center" });
 
-        // Caja Titular/Filtro
         doc.setDrawColor(...colorAzul);
         doc.setFillColor(245, 247, 250);
         doc.roundedRect(12, 32, 188, 20, 2, 2, "FD");
@@ -332,7 +368,6 @@
         doc.setTextColor(0, 0, 0);
         doc.text(hoy, 170, 46);
 
-        // Filas Tabla
         let totalComprado = 0;
         let totalAbonado = 0;
 
@@ -396,7 +431,6 @@
             finalY = 20;
         }
 
-        // Totales al pie del PDF
         doc.setFillColor(245, 247, 250);
         doc.setDrawColor(200, 200, 200);
         doc.rect(110, finalY, 90, 30, "FD");
@@ -510,13 +544,37 @@
     }
 
     function calcularSaldosYTotales() {
+        let totalVentasBrutas = 0;
+        let totalKilosVendidos = 0;
         let totalAbonadoCarne = 0;
+
         movimientos.forEach(mov => {
             if (mov.subTipo === 'cliente') {
+                totalVentasBrutas += parseFloat(mov.montoCalculado || 0);
+                totalKilosVendidos += parseFloat(mov.peso || 0);
                 totalAbonadoCarne += parseFloat(mov.abono || 0);
             }
         });
+
+        const deudaTotal = totalVentasBrutas - totalAbonadoCarne;
+
+        document.getElementById('total-ventas-carne').innerText = formatearMoneda(totalVentasBrutas);
+        document.getElementById('total-kilos-carne').innerText = `${totalKilosVendidos.toFixed(3)} KG`;
         document.getElementById('saldo-carne').innerText = formatearMoneda(totalAbonadoCarne);
+        document.getElementById('deuda-total-carne').innerText = formatearMoneda(deudaTotal > 0 ? deudaTotal : 0);
+
+        // Actualizar barra de Porcentaje de Cobranza
+        let pctAbonado = 0;
+        let pctPendiente = 0;
+
+        if (totalVentasBrutas > 0) {
+            pctAbonado = (totalAbonadoCarne / totalVentasBrutas) * 100;
+            if (pctAbonado > 100) pctAbonado = 100;
+            pctPendiente = 100 - pctAbonado;
+        }
+
+        document.getElementById('bar-cobranza-fill').style.width = `${pctAbonado.toFixed(1)}%`;
+        document.getElementById('texto-cobranza-pct').innerText = `Abonado: ${pctAbonado.toFixed(1)}%  |  Pendiente: ${pctPendiente.toFixed(1)}%`;
     }
 
     function actualizarSelectClientesFiltro() {
@@ -565,68 +623,72 @@
         aplicarFiltros();
     };
 
+    // FUNCIÓN PARA VER DESGLOSE DE CLIENTE DESDE LA TARJETA
+    window.irADetalleCliente = function(nombreCliente) {
+        cambiarSubTabCarne('cliente');
+        document.getElementById('filtro-cliente-select').value = nombreCliente;
+        document.getElementById('filtro-cliente-input').value = '';
+        aplicarFiltros();
+    };
+
     function renderizarResumenClientesAcumulado() {
         const contenedor = document.getElementById('lista-resumen-clientes');
-        const campoDeudaTotal = document.getElementById('deuda-total-carne');
         contenedor.innerHTML = '';
         
         let cuentasClientes = {};
-        let sumaDeudasGlobal = 0;
-
-        const clienteSelect = document.getElementById('filtro-cliente-select').value.toUpperCase().trim();
-        const clienteInput = document.getElementById('filtro-cliente-input').value.toUpperCase().trim();
-        const filtroCliente = clienteSelect || clienteInput;
+        const filtroBusquedaInv = (document.getElementById('buscar-cliente-inv')?.value || '').toUpperCase().trim();
 
         movimientos.forEach(mov => {
             if (mov.subTipo === 'cliente') {
                 let nombre = (mov.cliente || 'VARIOS').trim().toUpperCase();
 
-                if (filtroCliente && !nombre.includes(filtroCliente)) return;
-                if (!coincideRangoFecha(mov.fecha)) return;
+                if (filtroBusquedaInv && !nombre.includes(filtroBusquedaInv)) return;
 
                 let totalNota = parseFloat(mov.montoCalculado || 0);
                 let abonoNota = parseFloat(mov.abono || 0);
 
                 if (!cuentasClientes[nombre]) {
-                    cuentasClientes[nombre] = { comprado: 0, abonado: 0 };
+                    cuentasClientes[nombre] = { comprado: 0, abonado: 0, ultimaFecha: mov.fecha };
                 }
                 cuentasClientes[nombre].comprado += totalNota;
                 cuentasClientes[nombre].abonado += abonoNota;
+
+                if (mov.fecha > cuentasClientes[nombre].ultimaFecha) {
+                    cuentasClientes[nombre].ultimaFecha = mov.fecha;
+                }
             }
         });
 
-        const listaNombres = Object.keys(cuentasClientes);
+        const listaNombres = Object.keys(cuentasClientes).sort();
 
         listaNombres.forEach(nombre => {
             const info = cuentasClientes[nombre];
             const saldoTotalPendiente = info.comprado - info.abonado;
-
-            if (saldoTotalPendiente > 0) {
-                sumaDeudasGlobal += saldoTotalPendiente;
-            }
 
             const div = document.createElement('div');
             div.className = 'tarjeta-cliente';
             div.style.borderTopColor = saldoTotalPendiente <= 0 ? '#2ecc71' : '#e74c3c';
 
             div.innerHTML = `
-                <h4>👤 ${nombre}</h4>
-                <p><span>Total Comprado:</span> <span>${formatearMoneda(info.comprado)}</span></p>
-                <p><span>Total Abonado:</span> <span class="monto-ingreso">${formatearMoneda(info.abonado)}</span></p>
-                <div class="saldo-acumulado">
-                    <span>Deuda Pendiente:</span>
-                    <span class="${saldoTotalPendiente <= 0 ? 'monto-ingreso' : 'monto-egreso'}">
-                        ${formatearMoneda(saldoTotalPendiente)}
-                    </span>
+                <div>
+                    <h4>👤 ${nombre}</h4>
+                    <p><span>Total Comprado:</span> <span>${formatearMoneda(info.comprado)}</span></p>
+                    <p><span>Total Abonado:</span> <span class="monto-ingreso">${formatearMoneda(info.abonado)}</span></p>
+                    <div class="saldo-acumulado">
+                        <span>Deuda Pendiente:</span>
+                        <span class="${saldoTotalPendiente <= 0 ? 'monto-ingreso' : 'monto-egreso'}">
+                            ${formatearMoneda(saldoTotalPendiente)}
+                        </span>
+                    </div>
+                    <div class="info-ultimo-mov">Último Movimiento: ${formatearFecha(info.ultimaFecha)}</div>
                 </div>
+                <button type="button" class="btn-ver-desglose" onclick="irADetalleCliente('${nombre}')">👁️ Ver Desglose / Historial</button>
             `;
             contenedor.appendChild(div);
         });
 
-        campoDeudaTotal.innerText = formatearMoneda(sumaDeudasGlobal);
-
         if (listaNombres.length === 0) {
-            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">No se encontraron registros para el rango o cliente seleccionado.</p>`;
+            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">No se encontraron clientes registrados con el filtro especificado.</p>`;
         }
     }
 
@@ -820,7 +882,7 @@
         reader.readAsArrayBuffer(file);
     };
 
-    // Escuchar cambios en la base de datos de Firebase en tiempo real
+    // Escuchar Firebase en tiempo real
     onSnapshot(collection(db, "movimientos"), (snapshot) => {
         movimientos = [];
         snapshot.forEach((doc) => {
