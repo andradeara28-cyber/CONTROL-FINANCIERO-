@@ -68,7 +68,7 @@
         .monto-ingreso { color: #2ecc71; font-weight: bold; }
         .monto-egreso { color: #e74c3c; font-weight: bold; }
         .btn-borrar { background: none; color: #e74c3c; border: none; cursor: pointer; padding: 0; font-size: 14px; }
-        .btn-pdf { background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .btn-pdf { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .btn-pdf:hover { background: #c0392b; }
         .hora-badge { font-weight: bold; color: #7f8c8d; font-size: 13px; }
     </style>
@@ -145,7 +145,7 @@
                         <th>Total Nota</th>
                         <th>Abono</th>
                         <th>Saldo Nota</th>
-                        <th>Nota PDF</th>
+                        <th>Historial PDF</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -218,10 +218,9 @@
         return ahora.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     }
 
-    // Convertidor simple de números a letras para importe en MXN
     function numeroALetras(monto) {
         const unidades = ['', 'UN', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE'];
-        const decenas = ['', 'DIEZ', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCOVENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
+        const decenas = ['', 'DIEZ', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
         const especiales = { 11: 'ONCE', 12: 'DOCE', 13: 'TRECE', 14: 'CATORCE', 15: 'QUINCE' };
 
         let entero = Math.floor(monto);
@@ -262,85 +261,102 @@
         return `${texto.trim()} PESOS ${strCentavos}`;
     }
 
-    function generarPDFNota(idMovimiento) {
-        const mov = movimientos.find(m => m.id === idMovimiento);
-        if (!mov) return;
+    // --- NUEVA FUNCIÓN PARA GENERAR NOTA HISTÓRICA DE TODO LO QUE DEBE Y COMPRÓ EL CLIENTE ---
+    window.generarPDFNota = function(idClienteOCliente) {
+        let clienteNombre = "";
+        const movEncontrado = movimientos.find(m => m.id === idClienteOCliente);
+        if (movEncontrado) {
+            clienteNombre = movEncontrado.cliente;
+        } else {
+            clienteNombre = idClienteOCliente;
+        }
+
+        if (!clienteNombre) return;
+
+        // Filtrar TODOS los movimientos de este cliente
+        const historialCliente = movimientos
+            .filter(m => m.subTipo === 'cliente' && m.cliente.toUpperCase().trim() === clienteNombre.toUpperCase().trim())
+            .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+        if (historialCliente.length === 0) {
+            alert("No se encontraron registros para este cliente.");
+            return;
+        }
 
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({
-            unit: 'mm',
-            format: [140, 200] // Tamaño personalizado similar a la nota física
-        });
+        const doc = new jsPDF({ unit: 'mm', format: 'letter' });
 
         const colorAzul = [18, 52, 102];
         const colorNaranja = [220, 100, 20];
 
-        // Encabezado - Títulos
+        // Encabezado
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(...colorNaranja);
-        doc.text("VENTA DE CARNE DE RES Y SUS DERIVADOS", 70, 12, { align: "center" });
+        doc.text("VENTA DE CARNE DE RES Y SUS DERIVADOS", 105, 12, { align: "center" });
 
-        doc.setFontSize(13);
+        doc.setFontSize(14);
         doc.setTextColor(...colorAzul);
-        doc.text("Distribuidora Pirámides Teotihuacán S.A. de C.V.", 70, 18, { align: "center" });
+        doc.text("Distribuidora Pirámides Teotihuacán S.A. de C.V.", 105, 18, { align: "center" });
 
         doc.setFontSize(8);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(50, 50, 50);
-        doc.text("San Martín de las Pirámides, Edo. de México. Calle Francisco Villa S/N", 70, 23, { align: "center" });
-        doc.text("Juan Hernández: 5526863228  |  Hugo Hernández: 5554142921", 70, 27, { align: "center" });
-        doc.text("Oficina: 5949584139", 70, 31, { align: "center" });
+        doc.text("San Martín de las Pirámides, Edo. de México. Calle Francisco Villa S/N", 105, 23, { align: "center" });
+        doc.text("Juan Hernández: 5526863228  |  Hugo Hernández: 5554142921  |  Oficina: 5949584139", 105, 27, { align: "center" });
 
-        // Caja de Remisión y Fecha
+        // Caja de Datos Cliente
         doc.setDrawColor(...colorAzul);
-        doc.setFillColor(240, 244, 250);
-        doc.rect(95, 34, 38, 16, "FD");
+        doc.setFillColor(245, 247, 250);
+        doc.roundedRect(12, 32, 188, 20, 2, 2, "FD");
 
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(8);
+        doc.setFontSize(11);
         doc.setTextColor(...colorAzul);
-        doc.text("REMISIÓN Nº", 100, 39);
-        doc.setTextColor(200, 30, 30);
-        doc.setFontSize(10);
-        doc.text(`${mov.id.slice(0, 6).toUpperCase()}`, 118, 39);
+        doc.text("ESTADO DE CUENTA / HISTORIAL GENERAL DE NOTAS", 16, 39);
 
-        doc.setTextColor(...colorAzul);
-        doc.setFontSize(8);
-        doc.text("FECHA:", 100, 46);
-        doc.setTextColor(0, 0, 0);
-        doc.text(formatearFecha(mov.fecha), 114, 46);
-
-        // Nombre del Cliente
-        doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
         doc.setTextColor(...colorNaranja);
-        doc.text("CLIENTE:", 12, 48);
+        doc.text("CLIENTE:", 16, 46);
         doc.setTextColor(0, 0, 0);
-        doc.text(mov.cliente, 30, 48);
-        doc.line(28, 49, 90, 49);
+        doc.text(clienteNombre.toUpperCase(), 34, 46);
 
-        // Tabla de Conceptos
-        const totalCalculado = parseFloat(mov.montoCalculado || 0);
-        const abonoCalculado = parseFloat(mov.abono || 0);
-        const precioUnitario = parseFloat(mov.precio || 0);
-        const pesoKg = parseFloat(mov.peso || 0);
+        const hoy = new Date().toLocaleDateString('es-MX');
+        doc.setTextColor(...colorAzul);
+        doc.text("FECHA EMISIÓN:", 140, 46);
+        doc.setTextColor(0, 0, 0);
+        doc.text(hoy, 170, 46);
 
-        let filasTabla = [];
-        if (mov.isAbonoPuro) {
-            filasTabla.push(["-", `ABONO / PAGO (${mov.concepto})`, "-", formatearMoneda(abonoCalculado)]);
-        } else {
-            filasTabla.push([
-                `${pesoKg.toFixed(3)} KG`,
-                mov.concepto,
-                formatearMoneda(precioUnitario),
-                formatearMoneda(totalCalculado)
-            ]);
-        }
+        // Armar filas de la tabla
+        let totalCompradoAcumulado = 0;
+        let totalAbonadoAcumulado = 0;
+
+        const filasTabla = historialCliente.map(mov => {
+            const totalNota = parseFloat(mov.montoCalculado || 0);
+            const abonoNota = parseFloat(mov.abono || 0);
+
+            totalCompradoAcumulado += totalNota;
+            totalAbonadoAcumulado += abonoNota;
+
+            const pesoStr = mov.isAbonoPuro ? '-' : `${parseFloat(mov.peso || 0).toFixed(3)} KG`;
+            const precioStr = mov.isAbonoPuro ? '-' : formatearMoneda(parseFloat(mov.precio || 0));
+
+            return [
+                formatearFecha(mov.fecha),
+                mov.concepto || (mov.isAbonoPuro ? 'ABONO A CUENTA' : 'COMPRA'),
+                mov.metodoPago || 'Efectivo',
+                pesoStr,
+                precioStr,
+                formatearMoneda(totalNota),
+                formatearMoneda(abonoNota)
+            ];
+        });
+
+        const saldoPendienteFinal = totalCompradoAcumulado - totalAbonadoAcumulado;
 
         doc.autoTable({
-            startY: 54,
-            head: [['CANT.', 'DESCRIPCIÓN', 'PRECIO U.', 'IMPORTE']],
+            startY: 56,
+            head: [['FECHA', 'CONCEPTO / DETALLE', 'PAGO', 'PESO', 'PRECIO U.', 'TOTAL NOTA', 'ABONADO']],
             body: filasTabla,
             theme: 'grid',
             headStyles: {
@@ -356,45 +372,61 @@
             },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 22 },
-                1: { halign: 'left', cellWidth: 52 },
-                2: { halign: 'right', cellWidth: 22 },
-                3: { halign: 'right', cellWidth: 22 }
+                1: { halign: 'left' },
+                2: { halign: 'center', cellWidth: 22 },
+                3: { halign: 'right', cellWidth: 20 },
+                4: { halign: 'right', cellWidth: 22 },
+                5: { halign: 'right', cellWidth: 25 },
+                6: { halign: 'right', cellWidth: 25 }
             },
-            margin: { left: 11, right: 11 }
+            margin: { left: 12, right: 12 }
         });
 
-        let finalY = doc.lastAutoTable.finalY + 8;
+        let finalY = doc.lastAutoTable.finalY + 10;
 
-        // Importe con letra
-        const montoFinal = mov.isAbonoPuro ? abonoCalculado : totalCalculado;
+        if (finalY > 230) {
+            doc.addPage();
+            finalY = 20;
+        }
+
+        // Totales y Saldo
+        doc.setFillColor(245, 247, 250);
+        doc.setDrawColor(200, 200, 200);
+        doc.rect(110, finalY, 90, 30, "FD");
+
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(50, 50, 50);
+
+        doc.text("TOTAL COMPRADO:", 114, finalY + 7);
+        doc.text(formatearMoneda(totalCompradoAcumulado), 195, finalY + 7, { align: "right" });
+
+        doc.text("TOTAL ABONADO:", 114, finalY + 14);
+        doc.setTextColor(39, 174, 96);
+        doc.text(formatearMoneda(totalAbonadoAcumulado), 195, finalY + 14, { align: "right" });
+
+        doc.setFontSize(9);
+        doc.setTextColor(192, 57, 43);
+        doc.text("SALDO PENDIENTE:", 114, finalY + 23);
+        doc.text(formatearMoneda(saldoPendienteFinal), 195, finalY + 23, { align: "right" });
+
         doc.setFontSize(7);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(80, 80, 80);
-        doc.text("IMPORTE CON LETRA:", 12, finalY);
+        doc.text("SALDO PENDIENTE CON LETRA:", 12, finalY + 7);
         doc.setFont("helvetica", "normal");
-        doc.text(numeroALetras(montoFinal), 12, finalY + 4);
+        doc.text(numeroALetras(saldoPendienteFinal > 0 ? saldoPendienteFinal : 0), 12, finalY + 12);
 
-        // Caja de Total
-        doc.setFillColor(...colorAzul);
-        doc.rect(92, finalY - 2, 36, 12, "F");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
-        doc.setTextColor(255, 255, 255);
-        doc.text("TOTAL $", 94, finalY + 5);
-        doc.text(formatearMoneda(montoFinal), 126, finalY + 5, { align: "right" });
-
-        // Firma
         doc.setDrawColor(150, 150, 150);
-        doc.line(25, finalY + 22, 65, finalY + 22);
+        doc.line(25, finalY + 32, 75, finalY + 32);
         doc.setFontSize(7);
         doc.setTextColor(100, 100, 100);
-        doc.text("FIRMA DEL CLIENTE", 45, finalY + 25, { align: "center" });
+        doc.text("FIRMA DE CONFORMIDAD DEL CLIENTE", 50, finalY + 36, { align: "center" });
 
-        // Guardar o Abrir PDF
-        doc.save(`Nota_${mov.cliente}_${mov.fecha}.pdf`);
-    }
+        doc.save(`Estado_De_Cuenta_${clienteNombre.replace(/\s+/g, '_')}.pdf`);
+    };
 
-    function ajustarCamposFormulario() {
+    window.ajustarCamposFormulario = function() {
         const formEl = document.getElementById('registro-form');
         const titRegistrar = document.getElementById('titulo-registrar');
         const boxExcel = document.getElementById('contenedor-excel');
@@ -444,15 +476,15 @@
 
             camposDinamicos.innerHTML = '';
         }
-    }
+    };
 
-    function cambiarSubTabCarne(subTab) {
+    window.cambiarSubTabCarne = function(subTab) {
         subTabCarneActual = subTab;
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-tab'));
         document.getElementById(`btn-sub-${subTab}`).classList.add('active-tab');
         ajustarCamposFormulario();
         actualizarVistasTablas();
-    }
+    };
 
     function establecerFechaDeHoy() {
         const hoy = new Date();
@@ -512,18 +544,18 @@
         return true;
     }
 
-    function aplicarFiltros() {
+    window.aplicarFiltros = function() {
         renderizarCarneCliente();
         renderizarResumenClientesAcumulado();
-    }
+    };
 
-    function limpiarFiltros() {
+    window.limpiarFiltros = function() {
         document.getElementById('filtro-cliente-select').value = '';
         document.getElementById('filtro-cliente-input').value = '';
         document.getElementById('filtro-fecha-inicio').value = '';
         document.getElementById('filtro-fecha-fin').value = '';
         aplicarFiltros();
-    }
+    };
 
     function renderizarResumenClientesAcumulado() {
         const contenedor = document.getElementById('lista-resumen-clientes');
@@ -578,6 +610,9 @@
                     <span class="${saldoTotalPendiente <= 0 ? 'monto-ingreso' : 'monto-egreso'}">
                         ${formatearMoneda(saldoTotalPendiente)}
                     </span>
+                </div>
+                <div style="margin-top: 12px; text-align: center;">
+                    <button class="btn-pdf" onclick="generarPDFNota('${nombre}')">📑 Descargar Estado de Cuenta PDF</button>
                 </div>
             `;
             contenedor.appendChild(div);
@@ -644,7 +679,7 @@
                 <td style="font-weight:bold; color:#2c3e50;">${formatearMoneda(total)}</td>
                 <td class="monto-ingreso">${formatearMoneda(abono)}</td>
                 <td class="${saldo <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldo)}</td>
-                <td><button class="btn-pdf" onclick="generarPDFNota('${mov.id}')">📄 PDF</button></td>
+                <td><button class="btn-pdf" onclick="generarPDFNota('${mov.id}')">📄 PDF Histórico</button></td>
                 <td><button class="btn-borrar" onclick="eliminarMovimiento('${mov.id}')">🗑️</button></td>
             `;
             tbody.appendChild(tr);
@@ -655,7 +690,66 @@
         }
     }
 
-    async function procesarExcel() {
+    // Guardar registro manual
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const tipoRegistro = document.getElementById('c_tipo_registro').value;
+        const nombre = document.getElementById('c_nombre').value.toUpperCase().trim();
+        const pago = document.getElementById('c_pago').value;
+        const concepto = document.getElementById('c_concepto').value.toUpperCase();
+        
+        let peso = 0;
+        let precio = 0;
+        let abono = 0;
+        let totalCalculado = 0;
+        let isAbonoPuro = false;
+
+        if (tipoRegistro === 'venta') {
+            peso = parseFloat(document.getElementById('c_peso').value || 0);
+            precio = parseFloat(document.getElementById('c_precio').value || 0);
+            abono = parseFloat(document.getElementById('c_abono').value || 0);
+            totalCalculado = peso * precio;
+        } else {
+            abono = parseFloat(document.getElementById('c_abono').value || 0);
+            isAbonoPuro = true;
+        }
+
+        try {
+            await addDoc(collection(db, "movimientos"), {
+                fecha: inputFecha.value,
+                hora: obtenerHoraActual(),
+                subTipo: 'cliente',
+                cliente: nombre,
+                metodoPago: pago,
+                concepto: concepto,
+                peso: peso,
+                precio: precio,
+                montoCalculado: totalCalculado,
+                abono: abono,
+                isAbonoPuro: isAbonoPuro
+            });
+
+            form.reset();
+            establecerFechaDeHoy();
+            ajustarCamposFormulario();
+            alert('¡Registro guardado con éxito!');
+        } catch (error) {
+            console.error("Error al guardar:", error);
+            alert("Error al guardar el movimiento.");
+        }
+    });
+
+    window.eliminarMovimiento = async function(id) {
+        if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+            try {
+                await deleteDoc(doc(db, "movimientos", id));
+            } catch (err) {
+                console.error("Error al eliminar:", err);
+            }
+        }
+    };
+
+    window.procesarExcel = async function() {
         const fileInput = document.getElementById('input-excel');
 
         if (!fileInput.files.length) {
@@ -713,89 +807,28 @@
 
                 alert(`¡Éxito! Se guardaron ${agregados} registros en la base de datos.`);
                 fileInput.value = '';
-
-            } catch (err) {
-                console.error(err);
-                alert('Hubo un problema al procesar e importar el archivo Excel.');
+            } catch (error) {
+                console.error("Error al procesar Excel:", error);
+                alert("Ocurrió un error al leer el archivo de Excel.");
             }
         };
 
         reader.readAsArrayBuffer(file);
-    }
+    };
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        if (subTabCarneActual !== 'cliente') return;
-
-        const tipoReg = document.getElementById('c_tipo_registro').value;
-        let nuevoMov = {
-            fecha: inputFecha.value,
-            hora: obtenerHoraActual(),
-            subTipo: 'cliente',
-            cliente: document.getElementById('c_nombre').value.toUpperCase().trim(),
-            metodoPago: document.getElementById('c_pago').value,
-            concepto: document.getElementById('c_concepto').value.toUpperCase()
-        };
-
-        if (tipoReg === 'venta') {
-            let p = parseFloat(document.getElementById('c_peso').value || 0);
-            let pr = parseFloat(document.getElementById('c_precio').value || 0);
-            nuevoMov.peso = p;
-            nuevoMov.precio = pr;
-            nuevoMov.montoCalculado = p * pr;
-            nuevoMov.abono = parseFloat(document.getElementById('c_abono').value || 0);
-            nuevoMov.isAbonoPuro = false;
-        } else {
-            nuevoMov.peso = 0;
-            nuevoMov.precio = 0;
-            nuevoMov.montoCalculado = 0;
-            nuevoMov.abono = parseFloat(document.getElementById('c_abono').value || 0);
-            nuevoMov.isAbonoPuro = true;
-        }
-
-        try {
-            await addDoc(collection(db, "movimientos"), nuevoMov);
-            form.reset();
-            establecerFechaDeHoy();
-            ajustarCamposFormulario();
-        } catch (error) {
-            console.error("Error al registrar movimiento:", error);
-            alert("No se pudo guardar el registro.");
-        }
+    // Escuchar cambios en la base de datos de Firebase en tiempo real
+    onSnapshot(collection(db, "movimientos"), (snapshot) => {
+        movimientos = [];
+        snapshot.forEach((doc) => {
+            movimientos.push({ id: doc.id, ...doc.data() });
+        });
+        actualizarVistasTablas();
     });
 
-    async function eliminarMovimiento(id) {
-        if(confirm('¿Deseas eliminar permanentemente esta nota/abono?')) {
-            try {
-                await deleteDoc(doc(db, "movimientos", id));
-            } catch (err) {
-                console.error("Error al borrar registro:", err);
-                alert("Ocurrió un problema al eliminar de la base de datos.");
-            }
-        }
-    }
-
-    // Exposición global
-    window.cambiarSubTabCarne = cambiarSubTabCarne;
-    window.ajustarCamposFormulario = ajustarCamposFormulario;
-    window.aplicarFiltros = aplicarFiltros;
-    window.limpiarFiltros = limpiarFiltros;
-    window.procesarExcel = procesarExcel;
-    window.eliminarMovimiento = eliminarMovimiento;
-    window.generarPDFNota = generarPDFNota;
-
+    // Inicializar
     establecerFechaDeHoy();
     ajustarCamposFormulario();
 
-    onSnapshot(collection(db, "movimientos"), (snapshot) => {
-        movimientos = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        actualizarVistasTablas();
-    });
 </script>
-
 </body>
 </html>
