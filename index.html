@@ -69,7 +69,6 @@
 <body>
 
 <div class="container">
-    <!-- SOLO TÍTULO DE ARRIBA -->
     <h1>Módulo Carne 🥩</h1>
 
     <!-- PESTAÑAS CARNE -->
@@ -102,7 +101,7 @@
     <div id="vista-carne-cliente" class="vista-seccion vista-activa">
         <h2>Historial Clientes 🥩</h2>
 
-        <!-- BARRA DE FILTROS POR RANGO DE FECHAS Y CLIENTE -->
+        <!-- BARRA DE FILTROS -->
         <div class="box-filtro">
             <div class="grupo-filtro">
                 <label>🔍 Cliente:</label>
@@ -151,7 +150,6 @@
     <div id="vista-carne-inventario" class="vista-seccion">
         <h2>Inventario Global 🥩</h2>
 
-        <!-- AMBAS TARJETAS JUNTAS SOLAMENTE DENTRO DE LA PESTAÑA 2 -->
         <div class="dashboard-grid">
             <div class="dash-card">
                 <h3>🥩 TOTAL ABONADO CARNE</h3>
@@ -163,7 +161,6 @@
             </div>
         </div>
 
-        <!-- RESUMEN INDIVIDUAL POR CLIENTE -->
         <div id="bloque-resumen-clientes">
             <h2>📊 Estado de Cuentas Individuales por Cliente</h2>
             <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
@@ -174,33 +171,28 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, enableMultiTabIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, enableMultiTabIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // Configuración de Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyCD-o8EvCSkEVMh74e68jqtHnol5Gfp3WA",
+        authDomain: "distribuidora-piramides.firebaseapp.com",
+        projectId: "distribuidora-piramides",
+        storageBucket: "distribuidora-piramides.firebasestorage.app",
+        messagingSenderId: "47623676911",
+        appId: "1:47623676911:web:f0e82a085a9bb380f68c1a"
+    };
 
-// Configuración de Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyCD-o8EvCSkEVMh74e68jqtHnol5Gfp3WA",
-  authDomain: "distribuidora-piramides.firebaseapp.com",
-  projectId: "distribuidora-piramides",
-  storageBucket: "distribuidora-piramides.firebasestorage.app",
-  messagingSenderId: "47623676911",
-  appId: "1:47623676911:web:f0e82a085a9bb380f68c1a"
-};
+    // Inicialización de Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-// Inicializar
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    // Activar soporte Offline
+    enableMultiTabIndexedDbPersistence(db).catch((err) => {
+        console.warn("No se pudo activar el modo offline:", err.code);
+    });
 
-// Activar modo sin internet (Offline)
-enableMultiTabIndexedDbPersistence(db).catch((err) => {
-    console.warn("No se pudo activar el modo offline:", err.code);
-});
-
-    const CLAVE_STORAGE = 'movimientos_carne_v1';
-    
-    let datosGuardados = localStorage.getItem(CLAVE_STORAGE);
-    let movimientos = datosGuardados ? JSON.parse(datosGuardados) : [];
-
+    let movimientos = [];
     let subTabCarneActual = 'cliente';
 
     const form = document.getElementById('registro-form');
@@ -227,7 +219,6 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
         const titExcel = document.getElementById('titulo-excel');
 
         if (subTabCarneActual === 'cliente') {
-            // Mostrar formulario y caja de Excel en Cliente Carne
             if(formEl) formEl.style.display = 'grid';
             if(titRegistrar) titRegistrar.style.display = 'block';
             if(boxExcel) boxExcel.style.display = 'flex';
@@ -264,7 +255,6 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
             camposDinamicos.innerHTML = htmlCampos;
 
         } else {
-            // Ocultar formulario y Excel en Inventario Global
             if(formEl) formEl.style.display = 'none';
             if(titRegistrar) titRegistrar.style.display = 'none';
             if(boxExcel) boxExcel.style.display = 'none';
@@ -288,9 +278,7 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
         let dd = hoy.getDate();
         if (dd < 10) dd = '0' + dd;
         if (mm < 10) mm = '0' + mm;
-        const hoyStr = `${hoy.getFullYear()}-${mm}-${dd}`;
-        
-        inputFecha.value = hoyStr;
+        inputFecha.value = `${hoy.getFullYear()}-${mm}-${dd}`;
     }
 
     function formatearFecha(f) {
@@ -301,13 +289,11 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
 
     function calcularSaldosYTotales() {
         let totalAbonadoCarne = 0;
-
         movimientos.forEach(mov => {
             if (mov.subTipo === 'cliente') {
                 totalAbonadoCarne += parseFloat(mov.abono || 0);
             }
         });
-
         document.getElementById('saldo-carne').innerText = formatearMoneda(totalAbonadoCarne);
     }
 
@@ -338,13 +324,8 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
         const fechaFin = document.getElementById('filtro-fecha-fin').value;
 
         if (!fechaMovStr) return true;
-
-        if (fechaInicio && fechaMovStr < fechaInicio) {
-            return false;
-        }
-        if (fechaFin && fechaMovStr > fechaFin) {
-            return false;
-        }
+        if (fechaInicio && fechaMovStr < fechaInicio) return false;
+        if (fechaFin && fechaMovStr > fechaFin) return false;
 
         return true;
     }
@@ -420,7 +401,6 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
             contenedor.appendChild(div);
         });
 
-        // Cargar valor en tarjeta de Deuda
         campoDeudaTotal.innerText = formatearMoneda(sumaDeudasGlobal);
 
         if (listaNombres.length === 0) {
@@ -429,8 +409,6 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
     }
 
     function actualizarVistasTablas() {
-        localStorage.setItem(CLAVE_STORAGE, JSON.stringify(movimientos));
-        
         calcularSaldosYTotales();
         actualizarSelectClientesFiltro();
         renderizarResumenClientesAcumulado();
@@ -455,7 +433,7 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
 
         let visibles = 0;
 
-        movimientos.forEach((mov, idx) => {
+        movimientos.forEach((mov) => {
             if (mov.subTipo !== 'cliente') return;
 
             let clienteNombre = (mov.cliente || '').toUpperCase();
@@ -484,7 +462,7 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
                 <td style="font-weight:bold; color:#2c3e50;">${formatearMoneda(total)}</td>
                 <td class="monto-ingreso">${formatearMoneda(abono)}</td>
                 <td class="${saldo <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldo)}</td>
-                <td><button class="btn-borrar" onclick="eliminarMovimiento(${idx})">🗑️</button></td>
+                <td><button class="btn-borrar" onclick="eliminarMovimiento('${mov.id}')">🗑️</button></td>
             `;
             tbody.appendChild(tr);
         });
@@ -494,7 +472,8 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
         }
     }
 
-    function procesarExcel() {
+    // Importación directa hacia Firebase
+    async function procesarExcel() {
         const fileInput = document.getElementById('input-excel');
 
         if (!fileInput.files.length) {
@@ -505,7 +484,7 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
         const file = fileInput.files[0];
         const reader = new FileReader();
 
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
             try {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
@@ -519,7 +498,7 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
                 }
 
                 let agregados = 0;
-                jsonFilas.forEach(row => {
+                for (const row of jsonFilas) {
                     let rowNorm = {};
                     Object.keys(row).forEach(k => { rowNorm[k.trim().toLowerCase()] = row[k]; });
 
@@ -529,13 +508,12 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
                     }
 
                     let hora = rowNorm['hora'] || obtenerHoraActual();
-
                     let peso = parseFloat(rowNorm['peso'] || rowNorm['kg'] || 0);
                     let precio = parseFloat(rowNorm['precio'] || 0);
                     let abono = parseFloat(rowNorm['abono'] || rowNorm['pago'] || 0);
                     let totalCalculado = peso * precio;
 
-                    movimientos.push({
+                    await addDoc(collection(db, "movimientos"), {
                         fecha: fecha,
                         hora: hora,
                         subTipo: 'cliente',
@@ -549,15 +527,14 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
                         isAbonoPuro: (peso === 0 && precio === 0)
                     });
                     agregados++;
-                });
+                }
 
-                actualizarVistasTablas();
-                alert(`¡Éxito! Se importaron ${agregados} registros desde el Excel.`);
+                alert(`¡Éxito! Se guardaron ${agregados} registros en la base de datos.`);
                 fileInput.value = '';
 
             } catch (err) {
                 console.error(err);
-                alert('Hubo un problema al procesar el archivo Excel. Verifica que el archivo no esté dañado.');
+                alert('Hubo un problema al procesar e importar el archivo Excel.');
             }
         };
 
@@ -595,33 +572,48 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
             nuevoMov.isAbonoPuro = true;
         }
 
-        // En lugar de movimientos.unshift(nuevoMov);
-        await addDoc(collection(db, "movimientos"), nuevoMov);
-
-        form.reset();
-        establecerFechaDeHoy();
-        ajustarCamposFormulario();
-        actualizarVistasTablas();
+        try {
+            await addDoc(collection(db, "movimientos"), nuevoMov);
+            form.reset();
+            establecerFechaDeHoy();
+            ajustarCamposFormulario();
+        } catch (error) {
+            console.error("Error al registrar movimiento:", error);
+            alert("No se pudo guardar el registro.");
+        }
     });
 
-    function eliminarMovimiento(idx) {
+    // Eliminación síncrona con documento de Firebase
+    async function eliminarMovimiento(id) {
         if(confirm('¿Deseas eliminar permanentemente esta nota/abono?')) {
-            movimientos.splice(idx, 1);
-            actualizarVistasTablas();
+            try {
+                await deleteDoc(doc(db, "movimientos", id));
+            } catch (err) {
+                console.error("Error al borrar registro:", err);
+                alert("Ocurrió un problema al eliminar de la base de datos.");
+            }
         }
     }
 
-    // Inicialización
+    // Exportación de funciones al entorno global (Window) para soportar eventos HTML
+    window.cambiarSubTabCarne = cambiarSubTabCarne;
+    window.ajustarCamposFormulario = ajustarCamposFormulario;
+    window.aplicarFiltros = aplicarFiltros;
+    window.limpiarFiltros = limpiarFiltros;
+    window.procesarExcel = procesarExcel;
+    window.eliminarMovimiento = eliminarMovimiento;
+
+    // Inicialización y escucha en tiempo real
     establecerFechaDeHoy();
     ajustarCamposFormulario();
-    // Cargar y escuchar datos de Firebase en tiempo real
-onSnapshot(collection(db, "movimientos"), (snapshot) => {
-  movimientos = snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
-  actualizarVistasTablas();
-});
+
+    onSnapshot(collection(db, "movimientos"), (snapshot) => {
+        movimientos = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        actualizarVistasTablas();
+    });
 </script>
 
 </body>
