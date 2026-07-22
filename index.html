@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Financiero - Módulo Carne</title>
-    <!-- Librería Excel -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Librerías para Generar PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -50,9 +48,8 @@
         .btn-ver-desglose { margin-top: 12px; background: #34495e; color: white; border: none; padding: 8px; border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; text-align: center; }
         .btn-ver-desglose:hover { background: #2c3e50; }
 
-        /* Formulario e Importador */
+        /* Formulario Manual */
         form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; align-items: center; }
-        .box-excel { background: #eef9f1; border: 1px dashed #27ae60; padding: 15px; border-radius: 8px; margin-bottom: 30px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         
         /* Barrita de Filtros */
         .box-filtro { background: #ebf5fb; border: 1px solid #a9cce3; padding: 12px 18px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
@@ -63,8 +60,6 @@
         input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; width: 100%; }
         button { background-color: #2c3e50; color: white; border: none; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #1a252f; }
-        .btn-excel { background-color: #27ae60; width: auto; padding: 10px 20px; }
-        .btn-excel:hover { background-color: #1e8449; }
         .btn-limpiar { background-color: #95a5a6; width: auto; padding: 8px 15px; font-size: 13px; }
         .btn-limpiar:hover { background-color: #7f8c8d; }
         
@@ -98,18 +93,6 @@
     <div class="sub-tabs-carne">
         <button class="tab-btn active-tab" id="btn-sub-cliente" onclick="cambiarSubTabCarne('cliente')">1. Cliente Carne</button>
         <button class="tab-btn" id="btn-sub-inventario" onclick="cambiarSubTabCarne('inventario')">2. Inventario Global</button>
-    </div>
-
-    <!-- IMPORTADOR DE EXCEL -->
-    <h2 id="titulo-excel">📊 Carga desde Excel</h2>
-    <div class="box-excel" id="contenedor-excel">
-        <div style="flex-grow: 1;">
-            <strong>¿Tienes un historial previo en Excel?</strong> Cárgalo aquí para sumarlo al sistema automáticamente:
-            <input type="file" id="input-excel" accept=".xlsx, .xls, .csv" style="margin-top: 8px; background: white;">
-        </div>
-        <div>
-            <button type="button" class="btn-excel" onclick="procesarExcel()">📥 Cargar Excel</button>
-        </div>
     </div>
 
     <!-- FORMULARIO MANUAL -->
@@ -471,14 +454,10 @@
     window.ajustarCamposFormulario = function() {
         const formEl = document.getElementById('registro-form');
         const titRegistrar = document.getElementById('titulo-registrar');
-        const boxExcel = document.getElementById('contenedor-excel');
-        const titExcel = document.getElementById('titulo-excel');
 
         if (subTabCarneActual === 'cliente') {
             if(formEl) formEl.style.display = 'grid';
             if(titRegistrar) titRegistrar.style.display = 'block';
-            if(boxExcel) boxExcel.style.display = 'flex';
-            if(titExcel) titExcel.style.display = 'block';
 
             const tipoRegistro = document.getElementById('c_tipo_registro')?.value || 'venta';
             
@@ -513,8 +492,6 @@
         } else {
             if(formEl) formEl.style.display = 'none';
             if(titRegistrar) titRegistrar.style.display = 'none';
-            if(boxExcel) boxExcel.style.display = 'none';
-            if(titExcel) titExcel.style.display = 'none';
 
             camposDinamicos.innerHTML = '';
         }
@@ -813,73 +790,6 @@
                 console.error("Error al eliminar:", err);
             }
         }
-    };
-
-    window.procesarExcel = async function() {
-        const fileInput = document.getElementById('input-excel');
-
-        if (!fileInput.files.length) {
-            alert('Por favor selecciona un archivo Excel (.xlsx o .csv)');
-            return;
-        }
-
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-
-        reader.onload = async function(e) {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const jsonFilas = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-                if (jsonFilas.length === 0) {
-                    alert('El archivo Excel parece estar vacío.');
-                    return;
-                }
-
-                let agregados = 0;
-                for (const row of jsonFilas) {
-                    let rowNorm = {};
-                    Object.keys(row).forEach(k => { rowNorm[k.trim().toLowerCase()] = row[k]; });
-
-                    let fecha = rowNorm['fecha'] || inputFecha.value;
-                    if(typeof fecha === 'number') {
-                        fecha = new Date((fecha - (25567 + 2)) * 86400 * 1000).toISOString().split('T')[0];
-                    }
-
-                    let hora = rowNorm['hora'] || obtenerHoraActual();
-                    let peso = parseFloat(rowNorm['peso'] || rowNorm['kg'] || 0);
-                    let precio = parseFloat(rowNorm['precio'] || 0);
-                    let abono = parseFloat(rowNorm['abono'] || rowNorm['pago'] || 0);
-                    let totalCalculado = peso * precio;
-
-                    await addDoc(collection(db, "movimientos"), {
-                        fecha: fecha,
-                        hora: hora,
-                        subTipo: 'cliente',
-                        cliente: String(rowNorm['cliente'] || rowNorm['nombre'] || 'CLIENTE EXCEL').toUpperCase().trim(),
-                        metodoPago: rowNorm['pago'] || rowNorm['forma de pago'] || 'Efectivo',
-                        concepto: String(rowNorm['concepto'] || rowNorm['detalle'] || 'VENTA IMPORTADA').toUpperCase(),
-                        peso: peso,
-                        precio: precio,
-                        montoCalculado: totalCalculado > 0 ? totalCalculado : parseFloat(rowNorm['total'] || 0),
-                        abono: abono,
-                        isAbonoPuro: (peso === 0 && precio === 0)
-                    });
-                    agregados++;
-                }
-
-                alert(`¡Éxito! Se guardaron ${agregados} registros en la base de datos.`);
-                fileInput.value = '';
-            } catch (error) {
-                console.error("Error al procesar Excel:", error);
-                alert("Ocurrió un error al leer el archivo de Excel.");
-            }
-        };
-
-        reader.readAsArrayBuffer(file);
     };
 
     // Escuchar Firebase en tiempo real
