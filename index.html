@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Financiero - Módulo Carne</title>
+    <!-- Librería Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Librerías para Generar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1350px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -36,7 +41,7 @@
         form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; background: #fdfdfd; padding: 20px; border: 1px solid #e1e8ed; border-radius: 8px; align-items: center; }
         .box-excel { background: #eef9f1; border: 1px dashed #27ae60; padding: 15px; border-radius: 8px; margin-bottom: 30px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         
-        /* Barrita de Filtros Rango de Fecha y Cliente */
+        /* Barrita de Filtros */
         .box-filtro { background: #ebf5fb; border: 1px solid #a9cce3; padding: 12px 18px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         .box-filtro label { font-weight: bold; color: #2980b9; font-size: 13px; }
         .grupo-filtro { display: flex; align-items: center; gap: 6px; }
@@ -63,6 +68,8 @@
         .monto-ingreso { color: #2ecc71; font-weight: bold; }
         .monto-egreso { color: #e74c3c; font-weight: bold; }
         .btn-borrar { background: none; color: #e74c3c; border: none; cursor: pointer; padding: 0; font-size: 14px; }
+        .btn-pdf { background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .btn-pdf:hover { background: #c0392b; }
         .hora-badge { font-weight: bold; color: #7f8c8d; font-size: 13px; }
     </style>
 </head>
@@ -138,6 +145,7 @@
                         <th>Total Nota</th>
                         <th>Abono</th>
                         <th>Saldo Nota</th>
+                        <th>Nota PDF</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -183,11 +191,9 @@
         appId: "1:47623676911:web:f0e82a085a9bb380f68c1a"
     };
 
-    // Inicialización de Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Activar soporte Offline
     enableMultiTabIndexedDbPersistence(db).catch((err) => {
         console.warn("No se pudo activar el modo offline:", err.code);
     });
@@ -210,6 +216,182 @@
     function obtenerHoraActual() {
         const ahora = new Date();
         return ahora.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    // Convertidor simple de números a letras para importe en MXN
+    function numeroALetras(monto) {
+        const unidades = ['', 'UN', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE'];
+        const decenas = ['', 'DIEZ', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCOVENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
+        const especiales = { 11: 'ONCE', 12: 'DOCE', 13: 'TRECE', 14: 'CATORCE', 15: 'QUINCE' };
+
+        let entero = Math.floor(monto);
+        let centavos = Math.round((monto - entero) * 100);
+        let strCentavos = (centavos < 10 ? '0' : '') + centavos + '/100 M.N.';
+
+        if (entero === 0) return `CERO PESOS ${strCentavos}`;
+
+        let texto = '';
+        if (entero >= 1000) {
+            let miles = Math.floor(entero / 1000);
+            texto += (miles === 1 ? 'UN MIL ' : unidades[miles] + ' MIL ');
+            entero %= 1000;
+        }
+
+        if (entero >= 100) {
+            let cientos = Math.floor(entero / 100);
+            if (cientos === 1 && entero % 100 === 0) texto += 'CIEN ';
+            else if (cientos === 1) texto += 'CIENTO ';
+            else if (cientos === 5) texto += 'QUINIENTOS ';
+            else if (cientos === 7) texto += 'SETECIENTOS ';
+            else if (cientos === 9) texto += 'NOVECIENTOS ';
+            else texto += unidades[cientos] + 'CIENTOS ';
+            entero %= 100;
+        }
+
+        if (entero >= 10 && entero <= 15 && especiales[entero]) {
+            texto += especiales[entero] + ' ';
+        } else if (entero >= 10) {
+            let dec = Math.floor(entero / 10);
+            let uni = entero % 10;
+            if (uni === 0) texto += decenas[dec] + ' ';
+            else texto += decenas[dec] + ' Y ' + unidades[uni] + ' ';
+        } else if (entero > 0) {
+            texto += unidades[entero] + ' ';
+        }
+
+        return `${texto.trim()} PESOS ${strCentavos}`;
+    }
+
+    function generarPDFNota(idMovimiento) {
+        const mov = movimientos.find(m => m.id === idMovimiento);
+        if (!mov) return;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+            unit: 'mm',
+            format: [140, 200] // Tamaño personalizado similar a la nota física
+        });
+
+        const colorAzul = [18, 52, 102];
+        const colorNaranja = [220, 100, 20];
+
+        // Encabezado - Títulos
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(...colorNaranja);
+        doc.text("VENTA DE CARNE DE RES Y SUS DERIVADOS", 70, 12, { align: "center" });
+
+        doc.setFontSize(13);
+        doc.setTextColor(...colorAzul);
+        doc.text("Distribuidora Pirámides Teotihuacán S.A. de C.V.", 70, 18, { align: "center" });
+
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(50, 50, 50);
+        doc.text("San Martín de las Pirámides, Edo. de México. Calle Francisco Villa S/N", 70, 23, { align: "center" });
+        doc.text("Juan Hernández: 5526863228  |  Hugo Hernández: 5554142921", 70, 27, { align: "center" });
+        doc.text("Oficina: 5949584139", 70, 31, { align: "center" });
+
+        // Caja de Remisión y Fecha
+        doc.setDrawColor(...colorAzul);
+        doc.setFillColor(240, 244, 250);
+        doc.rect(95, 34, 38, 16, "FD");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(...colorAzul);
+        doc.text("REMISIÓN Nº", 100, 39);
+        doc.setTextColor(200, 30, 30);
+        doc.setFontSize(10);
+        doc.text(`${mov.id.slice(0, 6).toUpperCase()}`, 118, 39);
+
+        doc.setTextColor(...colorAzul);
+        doc.setFontSize(8);
+        doc.text("FECHA:", 100, 46);
+        doc.setTextColor(0, 0, 0);
+        doc.text(formatearFecha(mov.fecha), 114, 46);
+
+        // Nombre del Cliente
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(...colorNaranja);
+        doc.text("CLIENTE:", 12, 48);
+        doc.setTextColor(0, 0, 0);
+        doc.text(mov.cliente, 30, 48);
+        doc.line(28, 49, 90, 49);
+
+        // Tabla de Conceptos
+        const totalCalculado = parseFloat(mov.montoCalculado || 0);
+        const abonoCalculado = parseFloat(mov.abono || 0);
+        const precioUnitario = parseFloat(mov.precio || 0);
+        const pesoKg = parseFloat(mov.peso || 0);
+
+        let filasTabla = [];
+        if (mov.isAbonoPuro) {
+            filasTabla.push(["-", `ABONO / PAGO (${mov.concepto})`, "-", formatearMoneda(abonoCalculado)]);
+        } else {
+            filasTabla.push([
+                `${pesoKg.toFixed(3)} KG`,
+                mov.concepto,
+                formatearMoneda(precioUnitario),
+                formatearMoneda(totalCalculado)
+            ]);
+        }
+
+        doc.autoTable({
+            startY: 54,
+            head: [['CANT.', 'DESCRIPCIÓN', 'PRECIO U.', 'IMPORTE']],
+            body: filasTabla,
+            theme: 'grid',
+            headStyles: {
+                fillColor: colorAzul,
+                textColor: [255, 255, 255],
+                fontSize: 8,
+                halign: 'center',
+                fontStyle: 'bold'
+            },
+            bodyStyles: {
+                fontSize: 8,
+                textColor: [30, 30, 30]
+            },
+            columnStyles: {
+                0: { halign: 'center', cellWidth: 22 },
+                1: { halign: 'left', cellWidth: 52 },
+                2: { halign: 'right', cellWidth: 22 },
+                3: { halign: 'right', cellWidth: 22 }
+            },
+            margin: { left: 11, right: 11 }
+        });
+
+        let finalY = doc.lastAutoTable.finalY + 8;
+
+        // Importe con letra
+        const montoFinal = mov.isAbonoPuro ? abonoCalculado : totalCalculado;
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(80, 80, 80);
+        doc.text("IMPORTE CON LETRA:", 12, finalY);
+        doc.setFont("helvetica", "normal");
+        doc.text(numeroALetras(montoFinal), 12, finalY + 4);
+
+        // Caja de Total
+        doc.setFillColor(...colorAzul);
+        doc.rect(92, finalY - 2, 36, 12, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(255, 255, 255);
+        doc.text("TOTAL $", 94, finalY + 5);
+        doc.text(formatearMoneda(montoFinal), 126, finalY + 5, { align: "right" });
+
+        // Firma
+        doc.setDrawColor(150, 150, 150);
+        doc.line(25, finalY + 22, 65, finalY + 22);
+        doc.setFontSize(7);
+        doc.setTextColor(100, 100, 100);
+        doc.text("FIRMA DEL CLIENTE", 45, finalY + 25, { align: "center" });
+
+        // Guardar o Abrir PDF
+        doc.save(`Nota_${mov.cliente}_${mov.fecha}.pdf`);
     }
 
     function ajustarCamposFormulario() {
@@ -462,17 +644,17 @@
                 <td style="font-weight:bold; color:#2c3e50;">${formatearMoneda(total)}</td>
                 <td class="monto-ingreso">${formatearMoneda(abono)}</td>
                 <td class="${saldo <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldo)}</td>
+                <td><button class="btn-pdf" onclick="generarPDFNota('${mov.id}')">📄 PDF</button></td>
                 <td><button class="btn-borrar" onclick="eliminarMovimiento('${mov.id}')">🗑️</button></td>
             `;
             tbody.appendChild(tr);
         });
 
         if (visibles === 0) {
-            tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#7f8c8d; font-style:italic; padding: 20px;">No se encontraron notas o pagos para las fechas y clientes seleccionados.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; color:#7f8c8d; font-style:italic; padding: 20px;">No se encontraron notas o pagos para las fechas y clientes seleccionados.</td></tr>`;
         }
     }
 
-    // Importación directa hacia Firebase
     async function procesarExcel() {
         const fileInput = document.getElementById('input-excel');
 
@@ -583,7 +765,6 @@
         }
     });
 
-    // Eliminación síncrona con documento de Firebase
     async function eliminarMovimiento(id) {
         if(confirm('¿Deseas eliminar permanentemente esta nota/abono?')) {
             try {
@@ -595,15 +776,15 @@
         }
     }
 
-    // Exportación de funciones al entorno global (Window) para soportar eventos HTML
+    // Exposición global
     window.cambiarSubTabCarne = cambiarSubTabCarne;
     window.ajustarCamposFormulario = ajustarCamposFormulario;
     window.aplicarFiltros = aplicarFiltros;
     window.limpiarFiltros = limpiarFiltros;
     window.procesarExcel = procesarExcel;
     window.eliminarMovimiento = eliminarMovimiento;
+    window.generarPDFNota = generarPDFNota;
 
-    // Inicialización y escucha en tiempo real
     establecerFechaDeHoy();
     ajustarCamposFormulario();
 
