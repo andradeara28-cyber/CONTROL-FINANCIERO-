@@ -174,7 +174,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, enableMultiTabIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -190,6 +191,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Activar modo sin internet (Offline)
+enableMultiTabIndexedDbPersistence(db).catch((err) => {
+    console.warn("No se pudo activar el modo offline:", err.code);
+});
 
     const CLAVE_STORAGE = 'movimientos_carne_v1';
     
