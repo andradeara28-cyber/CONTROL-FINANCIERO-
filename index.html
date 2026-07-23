@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control Financiero - Múltiples Módulos</title>
+    <title>Distribuidora Pirámides Teotihuacán S.A. de C.V.</title>
     <!-- Librerías para Generar PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -11,13 +11,77 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1350px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; margin-bottom: 25px; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; font-size: 26px; }
+        .subtitulo-empresa { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 25px; font-weight: bold; }
         h2 { color: #2c3e50; border-bottom: 2px solid #e1e8ed; padding-bottom: 8px; margin-top: 30px; }
         
-        /* Pestañas Principales de Módulos (Carne / Forrajera) */
-        .main-modules-tabs { display: flex; gap: 15px; margin-bottom: 30px; border-bottom: 2px solid #cbd5e1; padding-bottom: 15px; }
-        .module-btn { padding: 14px 25px; border: none; background: #cbd5e1; color: #334155; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 16px; transition: all 0.2s; flex: 1; text-align: center; }
-        .module-btn.active-module { background: #2c3e50; color: white; box-shadow: 0 4px 6px rgba(44, 62, 80, 0.3); }
+        /* PANTALLA DE SELECCIÓN INICIAL DE MÓDULOS (MENÚ PRINCIPAL) */
+        .menu-principal-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .menu-principal-container h3 {
+            color: #34495e;
+            margin-bottom: 30px;
+            font-size: 20px;
+        }
+        .main-modules-cards {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            max-width: 700px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .card-modulo-selector {
+            flex: 1;
+            min-width: 280px;
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 35px 20px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+            text-align: center;
+        }
+        .card-modulo-selector:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border-color: #2c3e50;
+        }
+        .card-modulo-selector.carne:hover { border-color: #e67e22; }
+        .card-modulo-selector.forrajera:hover { border-color: #27ae60; }
+        
+        .card-modulo-selector .icono { font-size: 45px; margin-bottom: 15px; display: block; }
+        .card-modulo-selector h4 { margin: 0 0 10px 0; font-size: 20px; color: #2c3e50; }
+        .card-modulo-selector p { margin: 0; color: #7f8c8d; font-size: 13px; }
+
+        /* Barra superior interna cuando ya estás dentro de un módulo */
+        .barra-regreso-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e1e8ed;
+            padding-bottom: 12px;
+        }
+        .btn-regresar-menu {
+            background-color: #7f8c8d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .btn-regresar-menu:hover { background-color: #616a6b; }
 
         /* Pestañas Internas */
         .sub-tabs { display: flex; gap: 10px; margin-bottom: 25px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e1e8ed; }
@@ -35,38 +99,13 @@
             padding: 30px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.06);
         }
-        .registro-card-header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        .registro-card-header h2 {
-            margin: 0;
-            border: none;
-            padding: 0;
-            color: #2c3e50;
-            font-size: 22px;
-        }
-        .registro-card-header p {
-            margin: 5px 0 0 0;
-            color: #7f8c8d;
-            font-size: 13px;
-        }
+        .registro-card-header { text-align: center; margin-bottom: 25px; }
+        .registro-card-header h2 { margin: 0; border: none; padding: 0; color: #2c3e50; font-size: 22px; }
+        .registro-card-header p { margin: 5px 0 0 0; color: #7f8c8d; font-size: 13px; }
 
-        .form-grid-amplio {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 18px;
-        }
-        .form-group-full {
-            grid-column: span 2;
-        }
-        .form-group label {
-            display: block;
-            font-weight: bold;
-            font-size: 13px;
-            color: #34495e;
-            margin-bottom: 6px;
-        }
+        .form-grid-amplio { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+        .form-group-full { grid-column: span 2; }
+        .form-group label { display: block; font-weight: bold; font-size: 13px; color: #34495e; margin-bottom: 6px; }
         .form-group input, .form-group select {
             width: 100%;
             padding: 12px;
@@ -74,14 +113,9 @@
             border-radius: 8px;
             font-size: 14px;
             background-color: #f8fafc;
-            transition: border-color 0.2s, background-color 0.2s;
             box-sizing: border-box;
         }
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #e67e22;
-            background-color: #ffffff;
-        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #e67e22; background-color: #ffffff; }
         .btn-registrar-grande {
             grid-column: span 2;
             margin-top: 10px;
@@ -93,12 +127,9 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: background 0.2s;
             box-shadow: 0 4px 6px rgba(44, 62, 80, 0.2);
         }
-        .btn-registrar-grande:hover {
-            background-color: #1a252f;
-        }
+        .btn-registrar-grande:hover { background-color: #1a252f; }
 
         /* Dashboard Global */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 25px; margin-top: 15px; }
@@ -125,7 +156,6 @@
         .box-filtro label { font-weight: bold; color: #2980b9; font-size: 13px; }
         .grupo-filtro { display: flex; align-items: center; gap: 6px; }
         .box-filtro input, .box-filtro select { width: auto; min-width: 140px; padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
-
         .btn-limpiar { background-color: #95a5a6; color: white; border: none; width: auto; padding: 8px 15px; font-size: 13px; font-weight: bold; border-radius: 6px; cursor: pointer; }
         .btn-limpiar:hover { background-color: #7f8c8d; }
         
@@ -139,32 +169,51 @@
         .vista-activa { display: block; }
         .modulo-contenedor { display: none; }
         .modulo-activo { display: block; }
+        .pantalla-menu-activo { display: block; }
 
         .monto-ingreso { color: #2ecc71; font-weight: bold; }
         .monto-egreso { color: #e74c3c; font-weight: bold; }
         .btn-borrar { background: none; color: #e74c3c; border: none; cursor: pointer; padding: 0; font-size: 14px; }
         .btn-pdf { background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; }
         .btn-pdf:hover { background: #c0392b; }
-
         .acciones-tabla-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 10px; margin-bottom: 25px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Control Financiero - Distribuidora Pirámides 📊</h1>
+    <h1>Distribuidora Pirámides Teotihuacán S.A. de C.V.</h1>
+    <div class="subtitulo-empresa">Sistema Integral de Control Financiero y Comercial</div>
 
-    <!-- PESTAÑAS PRINCIPALES DE MÓDULOS -->
-    <div class="main-modules-tabs">
-        <button class="module-btn active-module" id="btn-mod-carne" onclick="cambiarModulo('carne')">🥩 Módulo Carne</button>
-        <button class="module-btn" id="btn-mod-forrajera" onclick="cambiarModulo('forrajera')">🌾 Módulo Forrajera</button>
+    <!-- ================================================= -->
+    <!-- MENÚ PRINCIPAL (PANTALLA DE INICIO) -->
+    <!-- ================================================= -->
+    <div id="menu-principal" class="modulo-contenedor modulo-activo">
+        <div class="menu-principal-container">
+            <h3>Seleccione el módulo que desea consultar o registrar:</h3>
+            <div class="main-modules-cards">
+                <div class="card-modulo-selector carne" onclick="cambiarModulo('carne')">
+                    <span class="icono">🥩</span>
+                    <h4>Módulo Carne</h4>
+                    <p>Gestión de notas de venta, kilos, abonos y control de clientes de carnicería.</p>
+                </div>
+                <div class="card-modulo-selector forrajera" onclick="cambiarModulo('forrajera')">
+                    <span class="icono">🌾</span>
+                    <h4>Módulo Forrajera</h4>
+                    <p>Control de bultos, alimento, granos, inventario y cuentas por cobrar.</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ================================================= -->
     <!-- MÓDULO CARNE -->
     <!-- ================================================= -->
-    <div id="modulo-carne" class="modulo-contenedor modulo-activo">
-        <h2 style="margin-top:0; border:none; color:#e67e22;">Gestión: Módulo Carne 🥩</h2>
+    <div id="modulo-carne" class="modulo-contenedor">
+        <div class="barra-regreso-header">
+            <h2 style="margin:0; border:none; color:#e67e22;">Gestión: Módulo Carne 🥩</h2>
+            <button class="btn-regresar-menu" onclick="irAlMenuPrincipal()">⬅️ Volver al Menú Principal</button>
+        </div>
 
         <div class="sub-tabs">
             <button class="tab-btn active-tab" id="btn-sub-carne-cliente" onclick="cambiarSubTab('carne', 'cliente')">1. Registrar Movimiento</button>
@@ -274,7 +323,10 @@
     <!-- MÓDULO FORRAJERA -->
     <!-- ================================================= -->
     <div id="modulo-forrajera" class="modulo-contenedor">
-        <h2 style="margin-top:0; border:none; color:#27ae60;">Gestión: Módulo Forrajera 🌾</h2>
+        <div class="barra-regreso-header">
+            <h2 style="margin:0; border:none; color:#27ae60;">Gestión: Módulo Forrajera 🌾</h2>
+            <button class="btn-regresar-menu" onclick="irAlMenuPrincipal()">⬅️ Volver al Menú Principal</button>
+        </div>
 
         <div class="sub-tabs">
             <button class="tab-btn active-tab" id="btn-sub-forrajera-cliente" onclick="cambiarSubTab('forrajera', 'cliente')">1. Registrar Movimiento</button>
@@ -404,7 +456,6 @@
     let movimientosCarne = [];
     let movimientosForrajera = [];
 
-    // Inicializar fechas de hoy
     function inicializarFechas() {
         const hoy = new Date().toISOString().split('T')[0];
         document.getElementById('fecha-carne').value = hoy;
@@ -413,10 +464,13 @@
     inicializarFechas();
 
     window.cambiarModulo = function(modulo) {
-        document.querySelectorAll('.module-btn').forEach(btn => btn.classList.remove('active-module'));
         document.querySelectorAll('.modulo-contenedor').forEach(mod => mod.classList.remove('modulo-activo'));
-        document.getElementById(`btn-mod-${modulo}`).classList.add('active-module');
-        document.getElementById(`modulo-${modulo}`).classList.add('active-module');
+        document.getElementById(`modulo-${modulo}`).classList.add('modulo-activo');
+    };
+
+    window.irAlMenuPrincipal = function() {
+        document.querySelectorAll('.modulo-contenedor').forEach(mod => mod.classList.remove('modulo-activo'));
+        document.getElementById('menu-principal').classList.add('modulo-activo');
     };
 
     window.cambiarSubTab = function(modulo, subTab) {
@@ -474,7 +528,6 @@
         return `${texto.trim()} PESOS ${strCentavos}`;
     }
 
-    // AJUSTAR CAMPOS DINÁMICOS FORMULARIOS
     window.ajustarCamposFormulario = function(modulo) {
         const tipoRegistro = document.getElementById(`tipo_reg_${modulo}`)?.value || 'venta';
         const contenedor = document.getElementById(`campos-dinamicos-${modulo}`);
@@ -540,7 +593,6 @@
     ajustarCamposFormulario('carne');
     ajustarCamposFormulario('forrajera');
 
-    // REGISTRAR EN FIREBASE
     window.registrarMovimiento = async function(e, modulo) {
         e.preventDefault();
         const tipoReg = document.getElementById(`tipo_reg_${modulo}`).value;
@@ -561,7 +613,7 @@
             montoCalculado = cantidad * precio;
         } else {
             abono = parseFloat(document.getElementById(`abono_${modulo}`).value) || 0;
-            montoCalculado = 0; // El abono puro no genera cargo a deuda nueva
+            montoCalculado = 0;
         }
 
         const nuevoMov = {
@@ -571,7 +623,7 @@
             cliente,
             metodoPago,
             concepto,
-            peso: cantidad, // Usamos la misma propiedad numérica para filtros/suma (kilos o bultos)
+            peso: cantidad,
             precio,
             abono,
             montoCalculado,
@@ -592,7 +644,6 @@
         }
     };
 
-    // ESCUCHAR CAMBIOS FIREBASE EN TIEMPO REAL
     onSnapshot(collection(db, "movimientos_carne"), (snapshot) => {
         movimientosCarne = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderizarDatosModulo('carne');
@@ -615,14 +666,12 @@
         }
     };
 
-    // RENDERIZAR DATOS Y FILTROS POR MÓDULO
     window.renderizarDatosModulo = function(modulo) {
         const movimientos = modulo === 'carne' ? movimientosCarne : movimientosForrajera;
         const busquedaClienteInv = (document.getElementById(`buscar-cliente-${modulo}`)?.value || '').toUpperCase().trim();
         const clienteSelect = document.getElementById(`filtro-cliente-select-${modulo}`);
         const selectValorActual = clienteSelect.value;
         
-        // Actualizar opciones del Select de filtro
         clienteSelect.innerHTML = '<option value="">-- Todos --</option>';
         let nombresUnicos = new Set();
         movimientos.forEach(m => { if(m.cliente) nombresUnicos.add(m.cliente); });
@@ -638,7 +687,6 @@
         const filtroFechaInicio = document.getElementById(`filtro-fecha-inicio-${modulo}`).value;
         const filtroFechaFin = document.getElementById(`filtro-fecha-fin-${modulo}`).value;
 
-        // Filtrar datos para tabla e historial
         const datosFiltrados = movimientos.filter(mov => {
             if (filtroClienteSel && mov.cliente !== filtroClienteSel) return false;
             if (filtroFechaInicio && mov.fecha < filtroFechaInicio) return false;
@@ -646,7 +694,6 @@
             return true;
         }).sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || b.timestamp - a.timestamp);
 
-        // Renderizar Tabla
         const tbody = document.getElementById(`tabla-cuerpo-${modulo}`);
         tbody.innerHTML = '';
         datosFiltrados.forEach(mov => {
@@ -671,7 +718,6 @@
             tbody.appendChild(tr);
         });
 
-        // Calcular Totales Dashboard Global
         let totalVentas = 0;
         let totalCantidadUnidades = 0;
         let totalAbonado = 0;
@@ -687,7 +733,6 @@
         document.getElementById(`saldo-${modulo}`).innerText = formatearMoneda(totalAbonado);
         document.getElementById(`deuda-total-${modulo}`).innerText = formatearMoneda(deudaTotal > 0 ? deudaTotal : 0);
 
-        // Renderizar Tarjetas Acumuladas por Cliente
         const contenedorTarjetas = document.getElementById(`lista-resumen-clientes-${modulo}`);
         contenedorTarjetas.innerHTML = '';
         let cuentasClientes = {};
@@ -732,7 +777,6 @@
         renderizarDatosModulo(modulo);
     };
 
-    // GENERADOR PDF PROFESIONAL
     window.generarPDF = function(modulo) {
         const movimientos = modulo === 'carne' ? movimientosCarne : movimientosForrajera;
         const filtroCliente = document.getElementById(`filtro-cliente-select-${modulo}`).value;
