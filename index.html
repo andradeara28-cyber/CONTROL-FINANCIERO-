@@ -439,11 +439,21 @@
             </div>
 
             <h2>Historial de Registros y Desgloses (Forrajera) 📑</h2>
+            <!-- BARRA DE FILTROS ACTUALIZADA CON INVERSIÓN / REVOLTURA -->
             <div class="box-filtro forrajera-filtro">
                 <div class="grupo-filtro">
                     <label>🔍 Cliente:</label>
                     <select id="filtro-cliente-select-forrajera" onchange="renderizarDatosModulo('forrajera')">
                         <option value="">-- Todos --</option>
+                    </select>
+                </div>
+                <div class="grupo-filtro">
+                    <label>🔄 Categoría:</label>
+                    <select id="filtro-inversion-select-forrajera" onchange="renderizarDatosModulo('forrajera')">
+                        <option value="">-- Todas --</option>
+                        <option value="Inversión">Inversión</option>
+                        <option value="Revoltura">Revoltura</option>
+                        <option value="Ninguna">Ninguna / Venta Normal</option>
                     </select>
                 </div>
                 <div class="grupo-filtro">
@@ -549,10 +559,9 @@
         const tipoInvRev = document.getElementById('tipo_inversion_revoltura').value;
         const selectEntradaSalida = document.getElementById('tipo_entrada_salida');
         const labelCantidad = document.getElementById('label-cantidad-forrajera');
-        const grupoPrecio = document.getElementById('grupo-precio-forrajera');
 
         if (tipoInvRev === 'Inversión') {
-            selectEntradaSalida.value = 'Salida'; // Por defecto una inversión suele ser salida de dinero
+            selectEntradaSalida.value = 'Salida';
             labelCantidad.innerText = '📦 Cantidad / Unidades (Opcional):';
         } else if (tipoInvRev === 'Revoltura') {
             selectEntradaSalida.value = 'Entrada';
@@ -673,7 +682,6 @@
         }
     };
 
-    // Registro específico para Forrajera con el orden de campos modificado
     window.registrarMovimientoForrajera = async function(e) {
         e.preventDefault();
         const fecha = document.getElementById('fecha-forrajera').value;
@@ -713,7 +721,6 @@
         }
     };
 
-    // Escuchas de Firebase
     onSnapshot(collection(db, "movimientos"), (snapshot) => {
         movimientosCarne = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderizarDatosModulo('carne');
@@ -754,11 +761,13 @@
         clienteSelect.value = selectValorActual;
 
         const filtroClienteSel = clienteSelect.value;
+        const filtroInversionSel = (modulo === 'forrajera') ? (document.getElementById('filtro-inversion-select-forrajera')?.value || '') : '';
         const filtroFechaInicio = document.getElementById(`filtro-fecha-inicio-${modulo}`).value;
         const filtroFechaFin = document.getElementById(`filtro-fecha-fin-${modulo}`).value;
 
         const datosFiltrados = movimientos.filter(mov => {
             if (filtroClienteSel && mov.cliente !== filtroClienteSel) return false;
+            if (modulo === 'forrajera' && filtroInversionSel && mov.inversionRevoltura !== filtroInversionSel) return false;
             if (filtroFechaInicio && mov.fecha < filtroFechaInicio) return false;
             if (filtroFechaFin && mov.fecha > filtroFechaFin) return false;
             return true;
@@ -806,7 +815,6 @@
             document.getElementById('deuda-total-carne').innerText = formatearMoneda(deudaTotal > 0 ? deudaTotal : 0);
 
         } else {
-            // Renderizado Forrajera incluyendo la columna de Forma de Pago
             datosFiltrados.forEach(mov => {
                 const totalNota = parseFloat(mov.montoCalculado || 0);
                 const colorInversion = mov.inversionRevoltura === 'Inversión' ? '#2980b9' : (mov.inversionRevoltura === 'Revoltura' ? '#d35400' : '#7f8c8d');
@@ -848,7 +856,6 @@
             document.getElementById('deuda-total-forrajera').innerText = formatearMoneda(totalSalidas);
         }
 
-        // Resumen por tarjetas de clientes
         const contenedorTarjetas = document.getElementById(`lista-resumen-clientes-${modulo}`);
         contenedorTarjetas.innerHTML = '';
         let cuentasClientes = {};
@@ -909,6 +916,10 @@
 
     window.limpiarFiltros = function(modulo) {
         document.getElementById(`filtro-cliente-select-${modulo}`).value = '';
+        if (modulo === 'forrajera') {
+            const filtroInv = document.getElementById('filtro-inversion-select-forrajera');
+            if (filtroInv) filtroInv.value = '';
+        }
         document.getElementById(`filtro-fecha-inicio-${modulo}`).value = '';
         document.getElementById(`filtro-fecha-fin-${modulo}`).value = '';
         renderizarDatosModulo(modulo);
@@ -917,9 +928,11 @@
     window.generarPDF = function(modulo) {
         const movimientos = modulo === 'carne' ? movimientosCarne : movimientosForrajera;
         const filtroCliente = document.getElementById(`filtro-cliente-select-${modulo}`).value;
+        const filtroInversionSel = (modulo === 'forrajera') ? (document.getElementById('filtro-inversion-select-forrajera')?.value || '') : '';
 
         const datosFiltrados = movimientos.filter(mov => {
             if (filtroCliente && mov.cliente !== filtroCliente) return false;
+            if (modulo === 'forrajera' && filtroInversionSel && mov.inversionRevoltura !== filtroInversionSel) return false;
             const fInicio = document.getElementById(`filtro-fecha-inicio-${modulo}`).value;
             const fFin = document.getElementById(`filtro-fecha-fin-${modulo}`).value;
             if (fInicio && mov.fecha < fInicio) return false;
