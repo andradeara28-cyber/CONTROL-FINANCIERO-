@@ -162,7 +162,7 @@
         
         .btn-ver-historial {
             margin-top: 12px;
-            background-color: #27ae60;
+            background-color: #e67e22;
             color: white;
             border: none;
             padding: 8px 12px;
@@ -173,7 +173,9 @@
             width: 100%;
             transition: background 0.2s;
         }
-        .btn-ver-historial:hover { background-color: #219653; }
+        .btn-ver-historial:hover { background-color: #d35400; }
+        .btn-ver-historial-forrajera { background-color: #27ae60; }
+        .btn-ver-historial-forrajera:hover { background-color: #219653; }
 
         /* MODAL DE HISTORIAL DETALLADO */
         .modal-overlay {
@@ -568,15 +570,8 @@
             <div class="table-responsive">
                 <table class="table-container">
                     <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Pago</th>
-                            <th>Concepto</th>
-                            <th>Cantidad</th>
-                            <th>Precio</th>
-                            <th>Categoría</th>
-                            <th>Flujo</th>
-                            <th>Total</th>
+                        <tr id="modal-tabla-cabecera">
+                            <!-- Se llena dinámicamente según el módulo -->
                         </tr>
                     </thead>
                     <tbody id="modal-tabla-cuerpo"></tbody>
@@ -584,7 +579,7 @@
             </div>
         </div>
         <div style="display: flex; justify-content: flex-end; margin-top: 15px; gap: 10px;">
-            <button type="button" class="btn-pdf" onclick="generarPDFClienteModal()" style="background-color: #27ae60;">📄 Descargar PDF de este Cliente</button>
+            <button type="button" class="btn-pdf" id="btn-pdf-modal" onclick="generarPDFClienteModal()" style="background-color: #27ae60;">📄 Descargar PDF de este Cliente</button>
         </div>
     </div>
 </div>
@@ -612,6 +607,7 @@
     let movimientosCarne = [];
     let movimientosForrajera = [];
     let clienteSeleccionadoModal = '';
+    let moduloActualModal = '';
 
     function inicializarFechas() {
         const hoy = new Date().toISOString().split('T')[0];
@@ -835,39 +831,88 @@
         }
     };
 
-    window.verHistorialCliente = function(clienteNombre) {
+    window.verHistorialCliente = function(clienteNombre, modulo) {
         clienteSeleccionadoModal = clienteNombre;
-        document.getElementById('modal-titulo-cliente').innerText = `Desglose de Historial: ${clienteNombre}`;
+        moduloActualModal = modulo;
+        document.getElementById('modal-titulo-cliente').innerText = `Desglose de Historial (${modulo.toUpperCase()}) : ${clienteNombre}`;
         
-        const selectFiltro = document.getElementById('filtro-cliente-select-forrajera');
+        const selectFiltro = document.getElementById(`filtro-cliente-select-${modulo}`);
         if(selectFiltro) {
             selectFiltro.value = clienteNombre;
-            renderizarDatosModulo('forrajera');
+            renderizarDatosModulo(modulo);
         }
 
+        const theadModal = document.getElementById('modal-tabla-cabecera');
         const tbodyModal = document.getElementById('modal-tabla-cuerpo');
         tbodyModal.innerHTML = '';
 
-        const movimientosCliente = movimientosForrajera.filter(m => m.cliente === clienteNombre)
-            .sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || b.timestamp - a.timestamp);
+        if (modulo === 'carne') {
+            theadModal.innerHTML = `
+                <th>Fecha</th>
+                <th>Pago</th>
+                <th>Concepto</th>
+                <th>Peso (KG)</th>
+                <th>Precio</th>
+                <th>Total Nota</th>
+                <th>Abono</th>
+                <th>Saldo Nota</th>
+            `;
+            const movimientosCliente = movimientosCarne.filter(m => m.cliente === clienteNombre)
+                .sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || b.timestamp - a.timestamp);
 
-        if (movimientosCliente.length === 0) {
-            tbodyModal.innerHTML = `<tr><td colspan="8" style="text-align: center;">No hay registros para este cliente.</td></tr>`;
+            if (movimientosCliente.length === 0) {
+                tbodyModal.innerHTML = `<tr><td colspan="8" style="text-align: center;">No hay registros para este cliente.</td></tr>`;
+            } else {
+                movimientosCliente.forEach(mov => {
+                    const totalNota = parseFloat(mov.montoCalculado || 0);
+                    const abonoNota = parseFloat(mov.abono || 0);
+                    const saldoNota = totalNota - abonoNota;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${mov.fecha}</td>
+                        <td>${mov.metodoPago || 'Efectivo'}</td>
+                        <td>${mov.concepto || (mov.isAbonoPuro ? 'ABONO A CUENTA' : 'VENTA')}</td>
+                        <td>${mov.isAbonoPuro ? '-' : `${parseFloat(mov.peso || 0).toFixed(3)} KG`}</td>
+                        <td>${mov.isAbonoPuro ? '-' : formatearMoneda(mov.precio)}</td>
+                        <td><strong>${formatearMoneda(totalNota)}</strong></td>
+                        <td class="monto-ingreso">${formatearMoneda(abonoNota)}</td>
+                        <td class="${saldoNota <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldoNota)}</td>
+                    `;
+                    tbodyModal.appendChild(tr);
+                });
+            }
         } else {
-            movimientosCliente.forEach(mov => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${mov.fecha}</td>
-                    <td>${mov.metodoPago || 'Efectivo'}</td>
-                    <td>${mov.concepto || ''}</td>
-                    <td>${mov.cantidad || 0} Pzas</td>
-                    <td>${formatearMoneda(mov.precio)}</td>
-                    <td><span class="tag-badge">${mov.inversionRevoltura || 'N/A'}</span></td>
-                    <td><span class="tag-badge" style="font-weight:bold;">${mov.entradaSalida || 'N/A'}</span></td>
-                    <td><strong>${formatearMoneda(mov.montoCalculado)}</strong></td>
-                `;
-                tbodyModal.appendChild(tr);
-            });
+            theadModal.innerHTML = `
+                <th>Fecha</th>
+                <th>Pago</th>
+                <th>Concepto</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th>Categoría</th>
+                <th>Flujo</th>
+                <th>Total</th>
+            `;
+            const movimientosCliente = movimientosForrajera.filter(m => m.cliente === clienteNombre)
+                .sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || b.timestamp - a.timestamp);
+
+            if (movimientosCliente.length === 0) {
+                tbodyModal.innerHTML = `<tr><td colspan="8" style="text-align: center;">No hay registros para este cliente.</td></tr>`;
+            } else {
+                movimientosCliente.forEach(mov => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${mov.fecha}</td>
+                        <td>${mov.metodoPago || 'Efectivo'}</td>
+                        <td>${mov.concepto || ''}</td>
+                        <td>${mov.cantidad || 0} Pzas</td>
+                        <td>${formatearMoneda(mov.precio)}</td>
+                        <td><span class="tag-badge">${mov.inversionRevoltura || 'N/A'}</span></td>
+                        <td><span class="tag-badge" style="font-weight:bold;">${mov.entradaSalida || 'N/A'}</span></td>
+                        <td><strong>${formatearMoneda(mov.montoCalculado)}</strong></td>
+                    `;
+                    tbodyModal.appendChild(tr);
+                });
+            }
         }
 
         document.getElementById('modal-historial-cliente').style.display = 'flex';
@@ -878,10 +923,10 @@
     };
 
     window.generarPDFClienteModal = function() {
-        if(!clienteSeleccionadoModal) return;
-        const selectFiltro = document.getElementById('filtro-cliente-select-forrajera');
+        if(!clienteSeleccionadoModal || !moduloActualModal) return;
+        const selectFiltro = document.getElementById(`filtro-cliente-select-${moduloActualModal}`);
         if(selectFiltro) selectFiltro.value = clienteSeleccionadoModal;
-        generarPDF('forrajera');
+        generarPDF(moduloActualModal);
     };
 
     window.renderizarDatosModulo = function(modulo) {
@@ -1032,6 +1077,7 @@
                             <span>Deuda Pendiente:</span>
                             <span class="${saldoPendienteCliente <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldoPendienteCliente)}</span>
                         </div>
+                        <button type="button" class="btn-ver-historial" onclick="verHistorialCliente('${nombre}', 'carne')">📋 Ver Historial y Desglose</button>
                     </div>
                 `;
             } else {
@@ -1045,7 +1091,7 @@
                             <span>Salidas:</span>
                             <span class="monto-egreso">${formatearMoneda(info.salidas)}</span>
                         </div>
-                        <button type="button" class="btn-ver-historial" onclick="verHistorialCliente('${nombre}')">📋 Ver Historial y Desglose</button>
+                        <button type="button" class="btn-ver-historial btn-ver-historial-forrajera" onclick="verHistorialCliente('${nombre}', 'forrajera')">📋 Ver Historial y Desglose</button>
                     </div>
                 `;
             }
