@@ -12,7 +12,19 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1350px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; font-size: 26px; }
-        .subtitulo-empresa { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 25px; font-weight: bold; }
+        .subtitulo-empresa { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 15px; font-weight: bold; }
+        
+        /* Estilo para el contenedor de la pirámide tamaño mediano */
+        .logo-piramide-container {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .logo-piramide-container svg {
+            width: 55px;
+            height: 55px;
+            fill: #e67e22;
+        }
+
         h2 { color: #2c3e50; border-bottom: 2px solid #e1e8ed; padding-bottom: 8px; margin-top: 30px; }
         
         /* PANTALLA DE SELECCIÓN INICIAL DE MÓDULOS (MENÚ PRINCIPAL) */
@@ -245,6 +257,13 @@
 <div class="container">
     <h1>Distribuidora Pirámides Teotihuacán S.A. de C.V.</h1>
     <div class="subtitulo-empresa">Sistema Integral de Control Financiero y Comercial</div>
+    
+    <!-- LOGO / ICONO DE PIRÁMIDE EN TAMAÑO MEDIANO -->
+    <div class="logo-piramide-container">
+        <svg viewBox="0 0 24 24">
+            <path d="M12,2L1,21H23L12,2M12,6L19.5,19H4.5L12,6M11,10V12H13V10H11M11,14V17H13V14H11Z" />
+        </svg>
+    </div>
 
     <!-- ================================================= -->
     <!-- MENÚ PRINCIPAL (PANTALLA DE INICIO) -->
