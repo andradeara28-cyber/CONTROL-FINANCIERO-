@@ -116,7 +116,7 @@
             background-color: #f8fafc;
             box-sizing: border-box;
         }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: #e67e22; background-color: #ffffff; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #27ae60; background-color: #ffffff; }
         .btn-registrar-grande {
             grid-column: span 2;
             margin-top: 10px;
@@ -351,37 +351,13 @@
                             <input type="date" id="fecha-forrajera" required>
                         </div>
                         <div class="form-group">
-                            <label for="nombre_forrajera">👤 Nombre del Cliente:</label>
+                            <label for="nombre_forrajera">👤 Nombre del Cliente / Proveedor:</label>
                             <input type="text" id="nombre_forrajera" placeholder="Ej. JUAN PÉREZ / PROVEEDOR" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="cantidad_forrajera">📦 Cantidad (Bultos/Pzas):</label>
-                            <input type="number" id="cantidad_forrajera" placeholder="0" min="0" step="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="precio_forrajera">🏷️ Precio Unitario ($):</label>
-                            <input type="number" id="precio_forrajera" placeholder="$0.00" min="0" step="0.01" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="pago_forrajera">💳 Forma de Pago:</label>
-                            <select id="pago_forrajera" required>
-                                <option value="" disabled selected>Seleccionar pago...</option>
-                                <option value="Efectivo">💵 Efectivo</option>
-                                <option value="Transferencia">📱 Transferencia</option>
-                                <option value="Tarjeta">💳 Pago con tarjeta</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <!-- Espacio equilibrado -->
-                        </div>
-                        <div class="form-group form-group-full">
-                            <label for="concepto_forrajera">🌾 Concepto / Producto:</label>
-                            <input type="text" id="concepto_forrajera" placeholder="Ej. MAÍZ, ALIMENTO PURINA, SAL MINERAL..." required>
                         </div>
                         
                         <div class="form-group">
                             <label for="tipo_inversion_revoltura">🔄 Inversión o Revolturas:</label>
-                            <select id="tipo_inversion_revoltura" required>
+                            <select id="tipo_inversion_revoltura" onchange="ajustarCamposFormularioForrajera()" required>
                                 <option value="" disabled selected>Seleccionar categoría...</option>
                                 <option value="Inversión">💼 Inversión (Compra de mercancía / Insumo)</option>
                                 <option value="Revoltura">🌾 Revoltura (Preparación / Mezcla)</option>
@@ -395,6 +371,33 @@
                                 <option value="Entrada">📥 Entrada (Ingreso de efectivo / Ingreso almacén)</option>
                                 <option value="Salida">📤 Salida (Gasto / Salida de mercancía)</option>
                             </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pago_forrajera">💳 Forma de Pago:</label>
+                            <select id="pago_forrajera" required>
+                                <option value="" disabled selected>Seleccionar pago...</option>
+                                <option value="Efectivo">💵 Efectivo</option>
+                                <option value="Transferencia">📱 Transferencia</option>
+                                <option value="Tarjeta">💳 Pago con tarjeta</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cantidad_forrajera" id="label-cantidad-forrajera">📦 Cantidad (Bultos/Pzas):</label>
+                            <input type="number" id="cantidad_forrajera" placeholder="0" min="0" step="1" required>
+                        </div>
+
+                        <div class="form-group" id="grupo-precio-forrajera">
+                            <label for="precio_forrajera">🏷️ Precio Unitario ($):</label>
+                            <input type="number" id="precio_forrajera" placeholder="$0.00" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group" id="grupo-espacio-vacio">
+                            <!-- Espacio equilibrado -->
+                        </div>
+
+                        <div class="form-group form-group-full">
+                            <label for="concepto_forrajera">🌾 Concepto / Producto:</label>
+                            <input type="text" id="concepto_forrajera" placeholder="Ej. MAÍZ, ALIMENTO PURINA, SAL MINERAL..." required>
                         </div>
 
                         <button type="submit" class="btn-registrar-grande" style="background-color: #27ae60;">💾 Registrar Movimiento Forrajera</button>
@@ -541,6 +544,25 @@
         return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     }
 
+    // Adaptación dinámica de campos en el formulario Forrajera según selección de Inversión/Revoltura
+    window.ajustarCamposFormularioForrajera = function() {
+        const tipoInvRev = document.getElementById('tipo_inversion_revoltura').value;
+        const selectEntradaSalida = document.getElementById('tipo_entrada_salida');
+        const labelCantidad = document.getElementById('label-cantidad-forrajera');
+        const grupoPrecio = document.getElementById('grupo-precio-forrajera');
+
+        if (tipoInvRev === 'Inversión') {
+            selectEntradaSalida.value = 'Salida'; // Por defecto una inversión suele ser salida de dinero
+            labelCantidad.innerText = '📦 Cantidad / Unidades (Opcional):';
+        } else if (tipoInvRev === 'Revoltura') {
+            selectEntradaSalida.value = 'Entrada';
+            labelCantidad.innerText = '📦 Cantidad de Mezcla (Pzas/Bultos):';
+        } else {
+            selectEntradaSalida.value = 'Entrada';
+            labelCantidad.innerText = '📦 Cantidad (Bultos/Pzas):';
+        }
+    };
+
     // Configuración formulario Carne
     window.ajustarCamposFormularioCarne = function() {
         const tipoRegistro = document.getElementById('tipo_reg_carne')?.value || 'venta';
@@ -651,17 +673,17 @@
         }
     };
 
-    // Registro específico para Forrajera con Forma de Pago incluida
+    // Registro específico para Forrajera con el orden de campos modificado
     window.registrarMovimientoForrajera = async function(e) {
         e.preventDefault();
         const fecha = document.getElementById('fecha-forrajera').value;
         const cliente = document.getElementById('nombre_forrajera').value.trim().toUpperCase();
-        const cantidad = parseFloat(document.getElementById('cantidad_forrajera').value) || 0;
-        const precio = parseFloat(document.getElementById('precio_forrajera').value) || 0;
-        const metodoPago = document.getElementById('pago_forrajera').value;
-        const concepto = document.getElementById('concepto_forrajera').value.trim().toUpperCase();
         const inversionRevoltura = document.getElementById('tipo_inversion_revoltura').value;
         const entradaSalida = document.getElementById('tipo_entrada_salida').value;
+        const metodoPago = document.getElementById('pago_forrajera').value;
+        const cantidad = parseFloat(document.getElementById('cantidad_forrajera').value) || 0;
+        const precio = parseFloat(document.getElementById('precio_forrajera').value) || 0;
+        const concepto = document.getElementById('concepto_forrajera').value.trim().toUpperCase();
         
         const montoCalculado = cantidad * precio;
 
@@ -684,6 +706,7 @@
             alert(`¡Movimiento registrado con éxito en FORRAJERA!`);
             document.getElementById('form-forrajera').reset();
             inicializarFechas();
+            ajustarCamposFormularioForrajera();
         } catch (error) {
             console.error("Error al guardar en forrajera:", error);
             alert("Hubo un error al guardar el registro en Forrajera.");
