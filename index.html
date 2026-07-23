@@ -177,6 +177,7 @@
         .monto-ingreso { color: #2ecc71; font-weight: bold; }
         .monto-egreso { color: #e74c3c; font-weight: bold; }
         .btn-borrar { background: none; color: #e74c3c; border: none; cursor: pointer; padding: 0; font-size: 14px; }
+        .tag-badge { background: #eef2f7; padding: 4px 8px; border-radius: 6px; font-size: 12px; border: 1px solid #cbd5e1; display: inline-block; font-weight: 600; }
         .btn-pdf { background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; }
         .btn-pdf:hover { background: #c0392b; }
         .acciones-tabla-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 10px; margin-bottom: 25px; }
@@ -203,7 +204,7 @@
                 <div class="card-modulo-selector forrajera" onclick="cambiarModulo('forrajera')">
                     <span class="icono">🌾</span>
                     <h4>Módulo Forrajera</h4>
-                    <p>Control de bultos, alimento, granos, inventario y cuentas por cobrar.</p>
+                    <p>Control de bultos, alimento, inversiones, revolturas, entradas/salidas y cuentas.</p>
                 </div>
             </div>
         </div>
@@ -341,15 +342,50 @@
             <div class="registro-card-container" style="border-top-color: #27ae60;">
                 <div class="registro-card-header">
                     <h2>Registrar Movimiento (Forrajera) 📝</h2>
-                    <p>Captura de venta de bultos, alimento, granos y abonos</p>
+                    <p>Captura de bultos, inversiones, revolturas, entradas y salidas</p>
                 </div>
-                <form id="form-forrajera" onsubmit="registrarMovimiento(event, 'forrajera')">
+                <form id="form-forrajera" onsubmit="registrarMovimientoForrajera(event)">
                     <div class="form-grid-amplio">
                         <div class="form-group">
                             <label for="fecha-forrajera">📅 Fecha:</label>
                             <input type="date" id="fecha-forrajera" required>
                         </div>
-                        <div id="campos-dinamicos-forrajera" style="display: contents;"></div>
+                        <div class="form-group">
+                            <label for="nombre_forrajera">👤 Nombre del Cliente:</label>
+                            <input type="text" id="nombre_forrajera" placeholder="Ej. JUAN PÉREZ / PROVEEDOR" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cantidad_forrajera">📦 Cantidad (Bultos/Pzas):</label>
+                            <input type="number" id="cantidad_forrajera" placeholder="0" min="0" step="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="precio_forrajera">🏷️ Precio Unitario ($):</label>
+                            <input type="number" id="precio_forrajera" placeholder="$0.00" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group form-group-full">
+                            <label for="concepto_forrajera">🌾 Concepto / Producto:</label>
+                            <input type="text" id="concepto_forrajera" placeholder="Ej. MAÍZ, ALIMENTO PURINA, SAL MINERAL..." required>
+                        </div>
+                        
+                        <!-- NUEVOS CAMPOS SOLICITADOS -->
+                        <div class="form-group">
+                            <label for="tipo_inversion_revoltura">🔄 Inversión o Revolturas:</label>
+                            <select id="tipo_inversion_revoltura" required>
+                                <option value="" disabled selected>Seleccionar categoría...</option>
+                                <option value="Inversión">💼 Inversión (Compra de mercancía / Insumo)</option>
+                                <option value="Revoltura">🌾 Revoltura (Preparación / Mezcla)</option>
+                                <option value="Ninguna">➖ Ninguna / Venta Normal</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipo_entrada_salida">📊 Entradas y Salidas:</label>
+                            <select id="tipo_entrada_salida" required>
+                                <option value="" disabled selected>Seleccionar flujo...</option>
+                                <option value="Entrada">📥 Entrada (Ingreso de efectivo / Ingreso almacén)</option>
+                                <option value="Salida">📤 Salida (Gasto / Salida de mercancía)</option>
+                            </select>
+                        </div>
+
                         <button type="submit" class="btn-registrar-grande" style="background-color: #27ae60;">💾 Registrar Movimiento Forrajera</button>
                     </div>
                 </form>
@@ -361,7 +397,7 @@
             <h2>Inventario Global (Forrajera) 🌾</h2>
             <div class="dashboard-grid">
                 <div class="dash-card">
-                    <h3>💰 TOTAL VENTAS BRUTAS</h3>
+                    <h3>💰 TOTAL VENTAS / MOVIMIENTOS</h3>
                     <p id="total-ventas-forrajera">$0.00</p>
                 </div>
                 <div class="dash-card kilos" style="border-left-color: #27ae60;">
@@ -369,18 +405,18 @@
                     <p id="total-kilos-forrajera">0 UNIDADES</p>
                 </div>
                 <div class="dash-card abonado">
-                    <h3>🌾 TOTAL ABONADO FORRAJERA</h3>
+                    <h3>📥 TOTAL ENTRADAS</h3>
                     <p id="saldo-forrajera">$0.00</p>
                 </div>
                 <div class="dash-card deuda">
-                    <h3>🚨 DEUDA TOTAL PENDIENTE</h3>
+                    <h3>📤 TOTAL SALIDAS / GASTOS</h3>
                     <p id="deuda-total-forrajera">$0.00</p>
                 </div>
             </div>
 
             <div id="bloque-resumen-clientes-forrajera">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
-                    <h2 style="margin: 0; border: none;">📊 Estado de Cuentas por Cliente (Forrajera)</h2>
+                    <h2 style="margin: 0; border: none;">📊 Resumen por Cliente / Proveedor (Forrajera)</h2>
                     <div style="width: 260px;">
                         <input type="text" id="buscar-cliente-forrajera" placeholder="🔍 Buscar cliente..." oninput="renderizarDatosModulo('forrajera')" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc;">
                     </div>
@@ -388,7 +424,7 @@
                 <div class="contenedor-resumen-clientes" id="lista-resumen-clientes-forrajera"></div>
             </div>
 
-            <h2>Historial de Registros y Notas (Forrajera) 📑</h2>
+            <h2>Historial de Registros y Desgloses (Forrajera) 📑</h2>
             <div class="box-filtro forrajera-filtro">
                 <div class="grupo-filtro">
                     <label>🔍 Cliente:</label>
@@ -414,13 +450,12 @@
                             <th>Fecha</th>
                             <th>Hora</th>
                             <th>Cliente</th>
-                            <th>Pago</th>
                             <th>Concepto / Producto</th>
-                            <th>Cantidad (Bultos/Pzas)</th>
-                            <th>Precio Unitario</th>
-                            <th>Total Nota</th>
-                            <th>Abono</th>
-                            <th>Saldo Nota</th>
+                            <th>Cantidad</th>
+                            <th>Precio Unit.</th>
+                            <th>Inversión / Revoltura</th>
+                            <th>Entrada / Salida</th>
+                            <th>Total</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -533,30 +568,26 @@
         return `${texto.trim()} PESOS ${strCentavos}`;
     }
 
-    window.ajustarCamposFormulario = function(modulo) {
-        const tipoRegistro = document.getElementById(`tipo_reg_${modulo}`)?.value || 'venta';
-        const contenedor = document.getElementById(`campos-dinamicos-${modulo}`);
-        
-        let labelUnidad = modulo === 'carne' ? '⚖️ Peso (KG):' : '📦 Cantidad (Bultos/Pzas):';
-        let placeholderUnidad = modulo === 'carne' ? '0.000' : '0';
-        let stepUnidad = modulo === 'carne' ? '0.001' : '1';
-        let placeholderConcepto = modulo === 'carne' ? 'Ej. PATA, PANZA, BISTEC...' : 'Ej. MAÍZ, ALIMENTO PURINA, SAL MINERAL...';
+    // Configuración formulario Carne (Original)
+    window.ajustarCamposFormularioCarne = function() {
+        const tipoRegistro = document.getElementById('tipo_reg_carne')?.value || 'venta';
+        const contenedor = document.getElementById('campos-dinamicos-carne');
 
         let html = `
             <div class="form-group">
-                <label for="tipo_reg_${modulo}">📋 Tipo de Registro:</label>
-                <select id="tipo_reg_${modulo}" onchange="ajustarCamposFormulario('${modulo}')" required>
+                <label for="tipo_reg_carne">📋 Tipo de Registro:</label>
+                <select id="tipo_reg_carne" onchange="ajustarCamposFormularioCarne()" required>
                     <option value="venta" ${tipoRegistro === 'venta' ? 'selected' : ''}>📝 Nueva Venta (Nota)</option>
                     <option value="abono" ${tipoRegistro === 'abono' ? 'selected' : ''}>💵 Solo Abono / Pago</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="nombre_${modulo}">👤 Nombre del Cliente:</label>
-                <input type="text" id="nombre_${modulo}" placeholder="Ej. JUAN PÉREZ" required>
+                <label for="nombre_carne">👤 Nombre del Cliente:</label>
+                <input type="text" id="nombre_carne" placeholder="Ej. JUAN PÉREZ" required>
             </div>
             <div class="form-group">
-                <label for="pago_${modulo}">💳 Forma de Pago:</label>
-                <select id="pago_${modulo}" required>
+                <label for="pago_carne">💳 Forma de Pago:</label>
+                <select id="pago_carne" required>
                     <option value="" disabled selected>Seleccionar...</option>
                     <option value="Efectivo">💵 Efectivo</option>
                     <option value="Transferencia">📱 Transferencia</option>
@@ -564,47 +595,46 @@
                 </select>
             </div>
             <div class="form-group form-group-full">
-                <label for="concepto_${modulo}">🥩 Concepto / Detalle:</label>
-                <input type="text" id="concepto_${modulo}" placeholder="${placeholderConcepto}" required>
+                <label for="concepto_carne">🥩 Concepto / Detalle:</label>
+                <input type="text" id="concepto_carne" placeholder="Ej. PATA, PANZA, BISTEC..." required>
             </div>
         `;
 
         if (tipoRegistro === 'venta') {
             html += `
                 <div class="form-group">
-                    <label for="cantidad_${modulo}">${labelUnidad}</label>
-                    <input type="number" id="cantidad_${modulo}" placeholder="${placeholderUnidad}" min="0" step="${stepUnidad}" required>
+                    <label for="cantidad_carne">⚖️ Peso (KG):</label>
+                    <input type="number" id="cantidad_carne" placeholder="0.000" min="0" step="0.001" required>
                 </div>
                 <div class="form-group">
-                    <label for="precio_${modulo}">🏷️ Precio Unitario ($):</label>
-                    <input type="number" id="precio_${modulo}" placeholder="$0.00" min="0" step="0.01" required>
+                    <label for="precio_carne">🏷️ Precio Unitario ($):</label>
+                    <input type="number" id="precio_carne" placeholder="$0.00" min="0" step="0.01" required>
                 </div>
                 <div class="form-group form-group-full">
-                    <label for="abono_${modulo}">💵 Abono Inicial ($):</label>
-                    <input type="number" id="abono_${modulo}" placeholder="$0.00 (Crédito = 0)" min="0" step="0.01" value="0" required>
+                    <label for="abono_carne">💵 Abono Inicial ($):</label>
+                    <input type="number" id="abono_carne" placeholder="$0.00 (Crédito = 0)" min="0" step="0.01" value="0" required>
                 </div>
             `;
         } else {
             html += `
                 <div class="form-group form-group-full">
-                    <label for="abono_${modulo}">💵 Monto del Abono ($):</label>
-                    <input type="number" id="abono_${modulo}" placeholder="$0.00" min="0.01" step="0.01" required>
+                    <label for="abono_carne">💵 Monto del Abono ($):</label>
+                    <input type="number" id="abono_carne" placeholder="$0.00" min="0.01" step="0.01" required>
                 </div>
             `;
         }
         contenedor.innerHTML = html;
     };
 
-    ajustarCamposFormulario('carne');
-    ajustarCamposFormulario('forrajera');
+    ajustarCamposFormularioCarne();
 
     window.registrarMovimiento = async function(e, modulo) {
         e.preventDefault();
-        const tipoReg = document.getElementById(`tipo_reg_${modulo}`).value;
-        const fecha = document.getElementById(`fecha-${modulo}`).value;
-        const cliente = document.getElementById(`nombre_${modulo}`).value.trim().toUpperCase();
-        const metodoPago = document.getElementById(`pago_${modulo}`).value;
-        const concepto = document.getElementById(`concepto_${modulo}`).value.trim().toUpperCase();
+        const tipoReg = document.getElementById('tipo_reg_carne').value;
+        const fecha = document.getElementById('fecha-carne').value;
+        const cliente = document.getElementById('nombre_carne').value.trim().toUpperCase();
+        const metodoPago = document.getElementById('pago_carne').value;
+        const concepto = document.getElementById('concepto_carne').value.trim().toUpperCase();
         
         let cantidad = 0;
         let precio = 0;
@@ -612,12 +642,12 @@
         let montoCalculado = 0;
 
         if (tipoReg === 'venta') {
-            cantidad = parseFloat(document.getElementById(`cantidad_${modulo}`).value) || 0;
-            precio = parseFloat(document.getElementById(`precio_${modulo}`).value) || 0;
-            abono = parseFloat(document.getElementById(`abono_${modulo}`).value) || 0;
+            cantidad = parseFloat(document.getElementById('cantidad_carne').value) || 0;
+            precio = parseFloat(document.getElementById('precio_carne').value) || 0;
+            abono = parseFloat(document.getElementById('abono_carne').value) || 0;
             montoCalculado = cantidad * precio;
         } else {
-            abono = parseFloat(document.getElementById(`abono_${modulo}`).value) || 0;
+            abono = parseFloat(document.getElementById('abono_carne').value) || 0;
             montoCalculado = 0;
         }
 
@@ -636,14 +666,11 @@
             timestamp: Date.now()
         };
 
-        // Carne vuelve a apuntar a la colección original "movimientos" para recuperar tus registros
-        const nombreColeccion = modulo === 'carne' ? 'movimientos' : 'movimientos_forrajera';
-
         try {
-            await addDoc(collection(db, nombreColeccion), nuevoMov);
-            alert(`¡Movimiento registrado con éxito en ${modulo.toUpperCase()}!`);
-            document.getElementById(`form-${modulo}`).reset();
-            ajustarCamposFormulario(modulo);
+            await addDoc(collection(db, "movimientos"), nuevoMov);
+            alert(`¡Movimiento registrado con éxito en CARNE!`);
+            document.getElementById('form-carne').reset();
+            ajustarCamposFormularioCarne();
             inicializarFechas();
         } catch (error) {
             console.error("Error al guardar:", error);
@@ -651,13 +678,49 @@
         }
     };
 
-    // Apuntamos Carne de regreso a la colección original "movimientos" donde ya estaban tus datos
+    // Registro específico para Forrajera con Inversiones/Revolturas y Entradas/Salidas
+    window.registrarMovimientoForrajera = async function(e) {
+        e.preventDefault();
+        const fecha = document.getElementById('fecha-forrajera').value;
+        const cliente = document.getElementById('nombre_forrajera').value.trim().toUpperCase();
+        const cantidad = parseFloat(document.getElementById('cantidad_forrajera').value) || 0;
+        const precio = parseFloat(document.getElementById('precio_forrajera').value) || 0;
+        const concepto = document.getElementById('concepto_forrajera').value.trim().toUpperCase();
+        const inversionRevoltura = document.getElementById('tipo_inversion_revoltura').value;
+        const entradaSalida = document.getElementById('tipo_entrada_salida').value;
+        
+        const montoCalculado = cantidad * precio;
+
+        const nuevoMovForrajera = {
+            fecha,
+            hora: obtenerHoraActual(),
+            cliente,
+            cantidad,
+            precio,
+            concepto,
+            inversionRevoltura,
+            entradaSalida,
+            montoCalculado,
+            timestamp: Date.now()
+        };
+
+        try {
+            await addDoc(collection(db, "movimientos_forrajera"), nuevoMovForrajera);
+            alert(`¡Movimiento registrado con éxito en FORRAJERA!`);
+            document.getElementById('form-forrajera').reset();
+            inicializarFechas();
+        } catch (error) {
+            console.error("Error al guardar en forrajera:", error);
+            alert("Hubo un error al guardar el registro en Forrajera.");
+        }
+    };
+
+    // Escuchas de Firebase
     onSnapshot(collection(db, "movimientos"), (snapshot) => {
         movimientosCarne = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderizarDatosModulo('carne');
     });
 
-    // Forrajera sigue en su propia colección independiente
     onSnapshot(collection(db, "movimientos_forrajera"), (snapshot) => {
         movimientosForrajera = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderizarDatosModulo('forrajera');
@@ -705,43 +768,88 @@
 
         const tbody = document.getElementById(`tabla-cuerpo-${modulo}`);
         tbody.innerHTML = '';
-        datosFiltrados.forEach(mov => {
-            const totalNota = parseFloat(mov.montoCalculado || 0);
-            const abonoNota = parseFloat(mov.abono || 0);
-            const saldoNota = totalNota - abonoNota;
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${mov.fecha}</td>
-                <td><span style="color:#7f8c8d; font-size:12px;">${mov.hora || ''}</span></td>
-                <td><strong>${mov.cliente}</strong></td>
-                <td><span style="background:#f4f6f9; padding:3px 6px; border-radius:4px; font-size:12px; border:1px solid #d5dbdb;">${mov.metodoPago || 'Efectivo'}</span></td>
-                <td>${mov.concepto || (mov.isAbonoPuro ? 'ABONO A CUENTA' : 'VENTA')}</td>
-                <td>${mov.isAbonoPuro ? '-' : (modulo === 'carne' ? `${parseFloat(mov.peso || 0).toFixed(3)} KG` : `${mov.peso || 0} Pzas`)}</td>
-                <td>${mov.isAbonoPuro ? '-' : formatearMoneda(mov.precio)}</td>
-                <td><strong>${formatearMoneda(totalNota)}</strong></td>
-                <td class="monto-ingreso">${formatearMoneda(abonoNota)}</td>
-                <td class="${saldoNota <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldoNota)}</td>
-                <td><button type="button" class="btn-borrar" onclick="eliminarMovimiento('${mov.id}', '${modulo}')">🗑️ Borrar</button></td>
-            `;
-            tbody.appendChild(tr);
-        });
+        if (modulo === 'carne') {
+            datosFiltrados.forEach(mov => {
+                const totalNota = parseFloat(mov.montoCalculado || 0);
+                const abonoNota = parseFloat(mov.abono || 0);
+                const saldoNota = totalNota - abonoNota;
 
-        let totalVentas = 0;
-        let totalCantidadUnidades = 0;
-        let totalAbonado = 0;
-        movimientos.forEach(mov => {
-            totalVentas += parseFloat(mov.montoCalculado || 0);
-            totalCantidadUnidades += parseFloat(mov.peso || 0);
-            totalAbonado += parseFloat(mov.abono || 0);
-        });
-        let deudaTotal = totalVentas - totalAbonado;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${mov.fecha}</td>
+                    <td><span style="color:#7f8c8d; font-size:12px;">${mov.hora || ''}</span></td>
+                    <td><strong>${mov.cliente}</strong></td>
+                    <td><span style="background:#f4f6f9; padding:3px 6px; border-radius:4px; font-size:12px; border:1px solid #d5dbdb;">${mov.metodoPago || 'Efectivo'}</span></td>
+                    <td>${mov.concepto || (mov.isAbonoPuro ? 'ABONO A CUENTA' : 'VENTA')}</td>
+                    <td>${mov.isAbonoPuro ? '-' : `${parseFloat(mov.peso || 0).toFixed(3)} KG`}</td>
+                    <td>${mov.isAbonoPuro ? '-' : formatearMoneda(mov.precio)}</td>
+                    <td><strong>${formatearMoneda(totalNota)}</strong></td>
+                    <td class="monto-ingreso">${formatearMoneda(abonoNota)}</td>
+                    <td class="${saldoNota <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldoNota)}</td>
+                    <td><button type="button" class="btn-borrar" onclick="eliminarMovimiento('${mov.id}', 'carne')">🗑️ Borrar</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
 
-        document.getElementById(`total-ventas-${modulo}`).innerText = formatearMoneda(totalVentas);
-        document.getElementById(`total-kilos-${modulo}`).innerText = modulo === 'carne' ? `${totalCantidadUnidades.toFixed(3)} KG` : `${totalCantidadUnidades} UNIDADES`;
-        document.getElementById(`saldo-${modulo}`).innerText = formatearMoneda(totalAbonado);
-        document.getElementById(`deuda-total-${modulo}`).innerText = formatearMoneda(deudaTotal > 0 ? deudaTotal : 0);
+            let totalVentas = 0;
+            let totalCantidadUnidades = 0;
+            let totalAbonado = 0;
+            movimientos.forEach(mov => {
+                totalVentas += parseFloat(mov.montoCalculado || 0);
+                totalCantidadUnidades += parseFloat(mov.peso || 0);
+                totalAbonado += parseFloat(mov.abono || 0);
+            });
+            let deudaTotal = totalVentas - totalAbonado;
 
+            document.getElementById('total-ventas-carne').innerText = formatearMoneda(totalVentas);
+            document.getElementById('total-kilos-carne').innerText = `${totalCantidadUnidades.toFixed(3)} KG`;
+            document.getElementById('saldo-carne').innerText = formatearMoneda(totalAbonado);
+            document.getElementById('deuda-total-carne').innerText = formatearMoneda(deudaTotal > 0 ? deudaTotal : 0);
+
+        } else {
+            // Renderizado Forrajera con los desgloses
+            datosFiltrados.forEach(mov => {
+                const totalNota = parseFloat(mov.montoCalculado || 0);
+                const colorInversion = mov.inversionRevoltura === 'Inversión' ? '#2980b9' : (mov.inversionRevoltura === 'Revoltura' ? '#d35400' : '#7f8c8d');
+                const colorEntradaSalida = mov.entradaSalida === 'Entrada' ? '#27ae60' : '#c0392b';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${mov.fecha}</td>
+                    <td><span style="color:#7f8c8d; font-size:12px;">${mov.hora || ''}</span></td>
+                    <td><strong>${mov.cliente}</strong></td>
+                    <td>${mov.concepto || ''}</td>
+                    <td>${mov.cantidad || 0} Pzas</td>
+                    <td>${formatearMoneda(mov.precio)}</td>
+                    <td><span class="tag-badge" style="color: ${colorInversion}; border-color: ${colorInversion};">${mov.inversionRevoltura || 'N/A'}</span></td>
+                    <td><span class="tag-badge" style="color: ${colorEntradaSalida}; border-color: ${colorEntradaSalida}; font-weight:bold;">${mov.entradaSalida || 'N/A'}</span></td>
+                    <td><strong>${formatearMoneda(totalNota)}</strong></td>
+                    <td><button type="button" class="btn-borrar" onclick="eliminarMovimiento('${mov.id}', 'forrajera')">🗑️ Borrar</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            let totalVentas = 0;
+            let totalCantidadUnidades = 0;
+            let totalEntradas = 0;
+            let totalSalidas = 0;
+
+            movimientos.forEach(mov => {
+                let monto = parseFloat(mov.montoCalculado || 0);
+                totalVentas += monto;
+                totalCantidadUnidades += parseFloat(mov.cantidad || 0);
+                if (mov.entradaSalida === 'Entrada') totalEntradas += monto;
+                if (mov.entradaSalida === 'Salida') totalSalidas += monto;
+            });
+
+            document.getElementById('total-ventas-forrajera').innerText = formatearMoneda(totalVentas);
+            document.getElementById('total-kilos-forrajera').innerText = `${totalCantidadUnidades} UNIDADES`;
+            document.getElementById('saldo-forrajera').innerText = formatearMoneda(totalEntradas);
+            document.getElementById('deuda-total-forrajera').innerText = formatearMoneda(totalSalidas);
+        }
+
+        // Resumen por tarjetas de clientes (común para ambos)
         const contenedorTarjetas = document.getElementById(`lista-resumen-clientes-${modulo}`);
         contenedorTarjetas.innerHTML = '';
         let cuentasClientes = {};
@@ -751,30 +859,51 @@
             if (busquedaClienteInv && !nombre.includes(busquedaClienteInv)) return;
 
             if (!cuentasClientes[nombre]) {
-                cuentasClientes[nombre] = { comprado: 0, abonado: 0 };
+                cuentasClientes[nombre] = { comprado: 0, abonado: 0, entradas: 0, salidas: 0 };
             }
-            cuentasClientes[nombre].comprado += parseFloat(mov.montoCalculado || 0);
-            cuentasClientes[nombre].abonado += parseFloat(mov.abono || 0);
+            let monto = parseFloat(mov.montoCalculado || 0);
+            cuentasClientes[nombre].comprado += monto;
+            if (modulo === 'carne') {
+                cuentasClientes[nombre].abonado += parseFloat(mov.abono || 0);
+            } else {
+                if (mov.entradaSalida === 'Entrada') cuentasClientes[nombre].entradas += monto;
+                if (mov.entradaSalida === 'Salida') cuentasClientes[nombre].salidas += monto;
+            }
         });
 
         Object.keys(cuentasClientes).sort().forEach(nombre => {
             const info = cuentasClientes[nombre];
-            const saldoPendienteCliente = info.comprado - info.abonado;
-
             const div = document.createElement('div');
             div.className = 'tarjeta-cliente';
-            div.style.borderTopColor = saldoPendienteCliente <= 0 ? '#2ecc71' : '#e74c3c';
-            div.innerHTML = `
-                <div>
-                    <h4>👤 ${nombre}</h4>
-                    <p><span>Total Comprado:</span> <span>${formatearMoneda(info.comprado)}</span></p>
-                    <p><span>Total Abonado:</span> <span class="monto-ingreso">${formatearMoneda(info.abonado)}</span></p>
-                    <div class="saldo-acumulado">
-                        <span>Deuda Pendiente:</span>
-                        <span class="${saldoPendienteCliente <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldoPendienteCliente)}</span>
+
+            if (modulo === 'carne') {
+                const saldoPendienteCliente = info.comprado - info.abonado;
+                div.style.borderTopColor = saldoPendienteCliente <= 0 ? '#2ecc71' : '#e74c3c';
+                div.innerHTML = `
+                    <div>
+                        <h4>👤 ${nombre}</h4>
+                        <p><span>Total Comprado:</span> <span>${formatearMoneda(info.comprado)}</span></p>
+                        <p><span>Total Abonado:</span> <span class="monto-ingreso">${formatearMoneda(info.abonado)}</span></p>
+                        <div class="saldo-acumulado">
+                            <span>Deuda Pendiente:</span>
+                            <span class="${saldoPendienteCliente <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldoPendienteCliente)}</span>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            } else {
+                div.style.borderTopColor = '#27ae60';
+                div.innerHTML = `
+                    <div>
+                        <h4>👤 ${nombre}</h4>
+                        <p><span>Total Acumulado:</span> <span>${formatearMoneda(info.comprado)}</span></p>
+                        <p><span>Entradas:</span> <span class="monto-ingreso">${formatearMoneda(info.entradas)}</span></p>
+                        <div class="saldo-acumulado">
+                            <span>Salidas:</span>
+                            <span class="monto-egreso">${formatearMoneda(info.salidas)}</span>
+                        </div>
+                    </div>
+                `;
+            }
             contenedorTarjetas.appendChild(div);
         });
     };
@@ -846,87 +975,79 @@
         doc.setTextColor(0, 0, 0);
         doc.text(hoy, 170, 46);
 
-        let totalComprado = 0;
-        let totalAbonado = 0;
+        let filasTabla = [];
+        let totalGeneral = 0;
 
-        const filasTabla = datosFiltrados.map(mov => {
-            const totalNota = parseFloat(mov.montoCalculado || 0);
-            const abonoNota = parseFloat(mov.abono || 0);
-            totalComprado += totalNota;
-            totalAbonado += abonoNota;
+        if (modulo === 'carne') {
+            let totalAbonado = 0;
+            filasTabla = datosFiltrados.map(mov => {
+                const totalNota = parseFloat(mov.montoCalculado || 0);
+                const abonoNota = parseFloat(mov.abono || 0);
+                totalGeneral += totalNota;
+                totalAbonado += abonoNota;
 
-            const unidadStr = mov.isAbonoPuro ? '-' : (modulo === 'carne' ? `${parseFloat(mov.peso || 0).toFixed(3)} KG` : `${mov.peso || 0} Pzas`);
-            const precioStr = mov.isAbonoPuro ? '-' : formatearMoneda(parseFloat(mov.precio || 0));
+                return [
+                    mov.fecha,
+                    mov.cliente,
+                    mov.concepto || 'VENTA',
+                    mov.metodoPago || 'Efectivo',
+                    `${parseFloat(mov.peso || 0).toFixed(3)} KG`,
+                    formatearMoneda(mov.precio),
+                    formatearMoneda(totalNota),
+                    formatearMoneda(abonoNota)
+                ];
+            });
 
-            return [
-                mov.fecha,
-                mov.cliente,
-                mov.concepto || (mov.isAbonoPuro ? 'ABONO A CUENTA' : 'VENTA'),
-                mov.metodoPago || 'Efectivo',
-                unidadStr,
-                precioStr,
-                formatearMoneda(totalNota),
-                formatearMoneda(abonoNota)
-            ];
-        });
+            doc.autoTable({
+                startY: 56,
+                head: [['FECHA', 'CLIENTE', 'DETALLE', 'PAGO', 'PESO', 'PRECIO', 'TOTAL', 'ABONADO']],
+                body: filasTabla,
+                theme: 'grid',
+                headStyles: { fillColor: colorAzul, textColor: [255, 255, 255], fontSize: 8, halign: 'center' },
+                bodyStyles: { fontSize: 8, textColor: [30, 30, 30] },
+                margin: { left: 12, right: 12 }
+            });
+        } else {
+            filasTabla = datosFiltrados.map(mov => {
+                const totalNota = parseFloat(mov.montoCalculado || 0);
+                totalGeneral += totalNota;
 
-        const saldoPendiente = totalComprado - totalAbonado;
+                return [
+                    mov.fecha,
+                    mov.cliente,
+                    mov.concepto || '',
+                    `${mov.cantidad || 0} Pzas`,
+                    formatearMoneda(mov.precio),
+                    mov.inversionRevoltura || 'N/A',
+                    mov.entradaSalida || 'N/A',
+                    formatearMoneda(totalNota)
+                ];
+            });
 
-        doc.autoTable({
-            startY: 56,
-            head: [['FECHA', 'CLIENTE', 'DETALLE', 'PAGO', 'CANTIDAD', 'PRECIO', 'TOTAL', 'ABONADO']],
-            body: filasTabla,
-            theme: 'grid',
-            headStyles: { fillColor: colorAzul, textColor: [255, 255, 255], fontSize: 8, halign: 'center', fontStyle: 'bold' },
-            bodyStyles: { fontSize: 8, textColor: [30, 30, 30] },
-            columnStyles: {
-                0: { halign: 'center', cellWidth: 20 },
-                1: { halign: 'left', cellWidth: 32 },
-                2: { halign: 'left' },
-                3: { halign: 'center', cellWidth: 20 },
-                4: { halign: 'right', cellWidth: 22 },
-                5: { halign: 'right', cellWidth: 20 },
-                6: { halign: 'right', cellWidth: 22 },
-                7: { halign: 'right', cellWidth: 22 }
-            },
-            margin: { left: 12, right: 12 }
-        });
+            doc.autoTable({
+                startY: 56,
+                head: [['FECHA', 'CLIENTE', 'CONCEPTO', 'CANTIDAD', 'PRECIO UNIT.', 'INVERSIÓN/REVOLTURA', 'ENTRADA/SALIDA', 'TOTAL']],
+                body: filasTabla,
+                theme: 'grid',
+                headStyles: { fillColor: colorAzul, textColor: [255, 255, 255], fontSize: 8, halign: 'center' },
+                bodyStyles: { fontSize: 8, textColor: [30, 30, 30] },
+                margin: { left: 12, right: 12 }
+            });
+        }
 
         let finalY = doc.lastAutoTable.finalY + 10;
         if (finalY > 230) { doc.addPage(); finalY = 20; }
 
         doc.setFillColor(245, 247, 250);
         doc.setDrawColor(200, 200, 200);
-        doc.rect(110, finalY, 90, 30, "FD");
-
-        doc.setFontSize(8);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(50, 50, 50);
-
-        doc.text("TOTAL VENTAS:", 114, finalY + 7);
-        doc.text(formatearMoneda(totalComprado), 195, finalY + 7, { align: "right" });
-
-        doc.text("TOTAL ABONADO:", 114, finalY + 14);
-        doc.setTextColor(39, 174, 96);
-        doc.text(formatearMoneda(totalAbonado), 195, finalY + 14, { align: "right" });
+        doc.rect(110, finalY, 90, 20, "FD");
 
         doc.setFontSize(9);
-        doc.setTextColor(192, 57, 43);
-        doc.text("SALDO PENDIENTE:", 114, finalY + 23);
-        doc.text(formatearMoneda(saldoPendiente), 195, finalY + 23, { align: "right" });
-
-        doc.setFontSize(7);
         doc.setFont("helvetica", "bold");
-        doc.setTextColor(80, 80, 80);
-        doc.text("SALDO PENDIENTE CON LETRA:", 12, finalY + 7);
-        doc.setFont("helvetica", "normal");
-        doc.text(numeroALetras(saldoPendiente > 0 ? saldoPendiente : 0), 12, finalY + 12);
-
-        doc.setDrawColor(150, 150, 150);
-        doc.line(25, finalY + 32, 75, finalY + 32);
-        doc.setFontSize(7);
-        doc.setTextColor(100, 100, 100);
-        doc.text("FIRMA DE CONFORMIDAD", 50, finalY + 36, { align: "center" });
+        doc.setTextColor(50, 50, 50);
+        doc.text("TOTAL GENERAL:", 114, finalY + 12);
+        doc.setTextColor(...colorAccent);
+        doc.text(formatearMoneda(totalGeneral), 195, finalY + 12, { align: "right" });
 
         const nombreArchivo = filtroCliente ? `Reporte_${modulo}_${filtroCliente.replace(/\s+/g, '_')}.pdf` : `Reporte_General_${modulo}.pdf`;
         doc.save(nombreArchivo);
