@@ -342,7 +342,7 @@
             <div class="registro-card-container" style="border-top-color: #27ae60;">
                 <div class="registro-card-header">
                     <h2>Registrar Movimiento (Forrajera) 📝</h2>
-                    <p>Captura de bultos, inversiones, revolturas, entradas y salidas</p>
+                    <p>Captura de bultos, inversiones, revolturas, entradas, salidas y forma de pago</p>
                 </div>
                 <form id="form-forrajera" onsubmit="registrarMovimientoForrajera(event)">
                     <div class="form-grid-amplio">
@@ -362,12 +362,23 @@
                             <label for="precio_forrajera">🏷️ Precio Unitario ($):</label>
                             <input type="number" id="precio_forrajera" placeholder="$0.00" min="0" step="0.01" required>
                         </div>
+                        <div class="form-group">
+                            <label for="pago_forrajera">💳 Forma de Pago:</label>
+                            <select id="pago_forrajera" required>
+                                <option value="" disabled selected>Seleccionar pago...</option>
+                                <option value="Efectivo">💵 Efectivo</option>
+                                <option value="Transferencia">📱 Transferencia</option>
+                                <option value="Tarjeta">💳 Pago con tarjeta</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <!-- Espacio equilibrado -->
+                        </div>
                         <div class="form-group form-group-full">
                             <label for="concepto_forrajera">🌾 Concepto / Producto:</label>
                             <input type="text" id="concepto_forrajera" placeholder="Ej. MAÍZ, ALIMENTO PURINA, SAL MINERAL..." required>
                         </div>
                         
-                        <!-- NUEVOS CAMPOS SOLICITADOS -->
                         <div class="form-group">
                             <label for="tipo_inversion_revoltura">🔄 Inversión o Revolturas:</label>
                             <select id="tipo_inversion_revoltura" required>
@@ -450,6 +461,7 @@
                             <th>Fecha</th>
                             <th>Hora</th>
                             <th>Cliente</th>
+                            <th>Pago</th>
                             <th>Concepto / Producto</th>
                             <th>Cantidad</th>
                             <th>Precio Unit.</th>
@@ -529,46 +541,7 @@
         return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     }
 
-    function numeroALetras(monto) {
-        const unidades = ['', 'UN', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE'];
-        const decenas = ['', 'DIEZ', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
-        const especiales = { 11: 'ONCE', 12: 'DOCE', 13: 'TRECE', 14: 'CATORCE', 15: 'QUINCE' };
-
-        let entero = Math.floor(monto);
-        let centavos = Math.round((monto - entero) * 100);
-        let strCentavos = (centavos < 10 ? '0' : '') + centavos + '/100 M.N.';
-
-        if (entero === 0) return `CERO PESOS ${strCentavos}`;
-        let texto = '';
-        if (entero >= 1000) {
-            let miles = Math.floor(entero / 1000);
-            texto += (miles === 1 ? 'UN MIL ' : unidades[miles] + ' MIL ');
-            entero %= 1000;
-        }
-        if (entero >= 100) {
-            let cientos = Math.floor(entero / 100);
-            if (cientos === 1 && entero % 100 === 0) texto += 'CIEN ';
-            else if (cientos === 1) texto += 'CIENTO ';
-            else if (cientos === 5) texto += 'QUINIENTOS ';
-            else if (cientos === 7) texto += 'SETECIENTOS ';
-            else if (cientos === 9) texto += 'NOVECIENTOS ';
-            else texto += unidades[cientos] + 'CIENTOS ';
-            entero %= 100;
-        }
-        if (entero >= 10 && entero <= 15 && especiales[entero]) {
-            texto += especiales[entero] + ' ';
-        } else if (entero >= 10) {
-            let dec = Math.floor(entero / 10);
-            let uni = entero % 10;
-            if (uni === 0) texto += decenas[dec] + ' ';
-            else texto += decenas[dec] + ' Y ' + unidades[uni] + ' ';
-        } else if (entero > 0) {
-            texto += unidades[entero] + ' ';
-        }
-        return `${texto.trim()} PESOS ${strCentavos}`;
-    }
-
-    // Configuración formulario Carne (Original)
+    // Configuración formulario Carne
     window.ajustarCamposFormularioCarne = function() {
         const tipoRegistro = document.getElementById('tipo_reg_carne')?.value || 'venta';
         const contenedor = document.getElementById('campos-dinamicos-carne');
@@ -678,13 +651,14 @@
         }
     };
 
-    // Registro específico para Forrajera con Inversiones/Revolturas y Entradas/Salidas
+    // Registro específico para Forrajera con Forma de Pago incluida
     window.registrarMovimientoForrajera = async function(e) {
         e.preventDefault();
         const fecha = document.getElementById('fecha-forrajera').value;
         const cliente = document.getElementById('nombre_forrajera').value.trim().toUpperCase();
         const cantidad = parseFloat(document.getElementById('cantidad_forrajera').value) || 0;
         const precio = parseFloat(document.getElementById('precio_forrajera').value) || 0;
+        const metodoPago = document.getElementById('pago_forrajera').value;
         const concepto = document.getElementById('concepto_forrajera').value.trim().toUpperCase();
         const inversionRevoltura = document.getElementById('tipo_inversion_revoltura').value;
         const entradaSalida = document.getElementById('tipo_entrada_salida').value;
@@ -697,6 +671,7 @@
             cliente,
             cantidad,
             precio,
+            metodoPago,
             concepto,
             inversionRevoltura,
             entradaSalida,
@@ -808,7 +783,7 @@
             document.getElementById('deuda-total-carne').innerText = formatearMoneda(deudaTotal > 0 ? deudaTotal : 0);
 
         } else {
-            // Renderizado Forrajera con los desgloses
+            // Renderizado Forrajera incluyendo la columna de Forma de Pago
             datosFiltrados.forEach(mov => {
                 const totalNota = parseFloat(mov.montoCalculado || 0);
                 const colorInversion = mov.inversionRevoltura === 'Inversión' ? '#2980b9' : (mov.inversionRevoltura === 'Revoltura' ? '#d35400' : '#7f8c8d');
@@ -819,6 +794,7 @@
                     <td>${mov.fecha}</td>
                     <td><span style="color:#7f8c8d; font-size:12px;">${mov.hora || ''}</span></td>
                     <td><strong>${mov.cliente}</strong></td>
+                    <td><span style="background:#f4f6f9; padding:3px 6px; border-radius:4px; font-size:12px; border:1px solid #d5dbdb;">${mov.metodoPago || 'Efectivo'}</span></td>
                     <td>${mov.concepto || ''}</td>
                     <td>${mov.cantidad || 0} Pzas</td>
                     <td>${formatearMoneda(mov.precio)}</td>
@@ -849,7 +825,7 @@
             document.getElementById('deuda-total-forrajera').innerText = formatearMoneda(totalSalidas);
         }
 
-        // Resumen por tarjetas de clientes (común para ambos)
+        // Resumen por tarjetas de clientes
         const contenedorTarjetas = document.getElementById(`lista-resumen-clientes-${modulo}`);
         contenedorTarjetas.innerHTML = '';
         let cuentasClientes = {};
@@ -1015,6 +991,7 @@
                 return [
                     mov.fecha,
                     mov.cliente,
+                    mov.metodoPago || 'Efectivo',
                     mov.concepto || '',
                     `${mov.cantidad || 0} Pzas`,
                     formatearMoneda(mov.precio),
@@ -1026,11 +1003,11 @@
 
             doc.autoTable({
                 startY: 56,
-                head: [['FECHA', 'CLIENTE', 'CONCEPTO', 'CANTIDAD', 'PRECIO UNIT.', 'INVERSIÓN/REVOLTURA', 'ENTRADA/SALIDA', 'TOTAL']],
+                head: [['FECHA', 'CLIENTE', 'PAGO', 'CONCEPTO', 'CANTIDAD', 'PRECIO', 'INVERSIÓN/REVOLTURA', 'ENTRADA/SALIDA', 'TOTAL']],
                 body: filasTabla,
                 theme: 'grid',
-                headStyles: { fillColor: colorAzul, textColor: [255, 255, 255], fontSize: 8, halign: 'center' },
-                bodyStyles: { fontSize: 8, textColor: [30, 30, 30] },
+                headStyles: { fillColor: colorAzul, textColor: [255, 255, 255], fontSize: 7, halign: 'center' },
+                bodyStyles: { fontSize: 7, textColor: [30, 30, 30] },
                 margin: { left: 12, right: 12 }
             });
         }
