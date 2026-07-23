@@ -469,10 +469,6 @@
                     <h3>💰 TOTAL VENTAS / MOVIMIENTOS</h3>
                     <p id="total-ventas-forrajera">$0.00</p>
                 </div>
-                <div class="dash-card kilos" style="border-left-color: #27ae60;">
-                    <h3>📦 TOTAL BULTOS / UNIDADES</h3>
-                    <p id="total-kilos-forrajera">0 UNIDADES</p>
-                </div>
                 <div class="dash-card abonado">
                     <h3>📥 TOTAL ENTRADAS</h3>
                     <p id="saldo-forrajera">$0.00</p>
@@ -828,12 +824,10 @@
         }
     };
 
-    // Funciones del Modal de Historial
     window.verHistorialCliente = function(clienteNombre) {
         clienteSeleccionadoModal = clienteNombre;
         document.getElementById('modal-titulo-cliente').innerText = `Desglose de Historial: ${clienteNombre}`;
         
-        // Seleccionar automáticamente el cliente en el filtro de la tabla de abajo
         const selectFiltro = document.getElementById('filtro-cliente-select-forrajera');
         if(selectFiltro) {
             selectFiltro.value = clienteNombre;
@@ -974,20 +968,17 @@
             });
 
             let totalVentas = 0;
-            let totalCantidadUnidades = 0;
             let totalEntradas = 0;
             let totalSalidas = 0;
 
             movimientos.forEach(mov => {
                 let monto = parseFloat(mov.montoCalculado || 0);
                 totalVentas += monto;
-                totalCantidadUnidades += parseFloat(mov.cantidad || 0);
                 if (mov.entradaSalida === 'Entrada') totalEntradas += monto;
                 if (mov.entradaSalida === 'Salida') totalSalidas += monto;
             });
 
             document.getElementById('total-ventas-forrajera').innerText = formatearMoneda(totalVentas);
-            document.getElementById('total-kilos-forrajera').innerText = `${totalCantidadUnidades} UNIDADES`;
             document.getElementById('saldo-forrajera').innerText = formatearMoneda(totalEntradas);
             document.getElementById('deuda-total-forrajera').innerText = formatearMoneda(totalSalidas);
         }
