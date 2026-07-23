@@ -398,12 +398,12 @@
     <!-- ================================================= -->
     <div id="modulo-forrajera" class="modulo-contenedor">
         <div class="barra-regreso-header">
-            <h2 style="margin:0; border:none; color:#27ae60;">Gestión: Módulo Forrajera 🌾</h2>
+            <h2 style="margin:0; border:none; color:#27ae60;">Módulo Forrajera 🌾</h2>
             <button class="btn-regresar-menu" onclick="irAlMenuPrincipal()">⬅️ Volver al Menú Principal</button>
         </div>
 
         <div class="sub-tabs">
-            <button class="tab-btn active-tab active-tab-forrajera" id="btn-sub-forrajera-cliente" onclick="cambiarSubTab('forrajera', 'cliente')">1. Registrar Movimiento</button>
+            <button class="tab-btn active-tab active-tab-forrajera" id="btn-sub-forrajera-cliente" onclick="cambiarSubTab('forrajera', 'cliente')">1. Registrar</button>
             <button class="tab-btn" id="btn-sub-forrajera-inventario" onclick="cambiarSubTab('forrajera', 'inventario')">2. Inventario Global e Historial</button>
         </div>
 
@@ -411,7 +411,7 @@
         <div id="vista-forrajera-cliente" class="vista-seccion vista-activa">
             <div class="registro-card-container" style="border-top-color: #27ae60;">
                 <div class="registro-card-header">
-                    <h2>Registrar Movimiento (Forrajera) 📝</h2>
+                    <h2>Registro 📝</h2>
                     <p>Captura de bultos, inversiones, revolturas, entradas, salidas y forma de pago</p>
                 </div>
                 <form id="form-forrajera" onsubmit="registrarMovimientoForrajera(event)">
@@ -476,7 +476,7 @@
 
         <!-- Pestaña 2: Inventario e Historial Forrajera -->
         <div id="vista-forrajera-inventario" class="vista-seccion">
-            <h2>Inventario Global (Forrajera) 🌾</h2>
+            <h2>Inventario Global 🌾</h2>
             <div class="dashboard-grid">
                 <div class="dash-card">
                     <h3>💰 TOTAL VENTAS / MOVIMIENTOS</h3>
@@ -494,7 +494,7 @@
 
             <div id="bloque-resumen-clientes-forrajera">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
-                    <h2 style="margin: 0; border: none;">📊 Resumen por Cliente / Proveedor (Forrajera)</h2>
+                    <h2 style="margin: 0; border: none;">📊 Resumen por Cliente</h2>
                     <div style="width: 260px;">
                         <input type="text" id="buscar-cliente-forrajera" placeholder="🔍 Buscar cliente..." oninput="renderizarDatosModulo('forrajera')" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc;">
                     </div>
@@ -502,7 +502,7 @@
                 <div class="contenedor-resumen-clientes" id="lista-resumen-clientes-forrajera"></div>
             </div>
 
-            <h2>Historial de Registros y Desgloses (Forrajera) 📑</h2>
+            <h2>Historial de Registros 📑</h2>
             <div class="box-filtro forrajera-filtro">
                 <div class="grupo-filtro">
                     <label>🔍 Cliente:</label>
