@@ -456,7 +456,6 @@
         console.warn("Modo offline no disponible:", err.code);
     });
 
-    // Guardaremos los datos por separado en memoria
     let movimientosCarne = [];
     let movimientosForrajera = [];
 
@@ -637,8 +636,8 @@
             timestamp: Date.now()
         };
 
-        // Guardamos en su colección correspondiente: "movimientos_carne" o "movimientos_forrajera"
-        const nombreColeccion = modulo === 'carne' ? 'movimientos_carne' : 'movimientos_forrajera';
+        // Carne vuelve a apuntar a la colección original "movimientos" para recuperar tus registros
+        const nombreColeccion = modulo === 'carne' ? 'movimientos' : 'movimientos_forrajera';
 
         try {
             await addDoc(collection(db, nombreColeccion), nuevoMov);
@@ -652,13 +651,13 @@
         }
     };
 
-    // Escuchar cambios en la colección de Carne
-    onSnapshot(collection(db, "movimientos_carne"), (snapshot) => {
+    // Apuntamos Carne de regreso a la colección original "movimientos" donde ya estaban tus datos
+    onSnapshot(collection(db, "movimientos"), (snapshot) => {
         movimientosCarne = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderizarDatosModulo('carne');
     });
 
-    // Escuchar cambios en la colección de Forrajera (¡Completamente independiente!)
+    // Forrajera sigue en su propia colección independiente
     onSnapshot(collection(db, "movimientos_forrajera"), (snapshot) => {
         movimientosForrajera = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderizarDatosModulo('forrajera');
@@ -666,7 +665,7 @@
 
     window.eliminarMovimiento = async function(id, modulo) {
         if (confirm("¿Estás seguro de eliminar este registro?")) {
-            const nombreColeccion = modulo === 'carne' ? 'movimientos_carne' : 'movimientos_forrajera';
+            const nombreColeccion = modulo === 'carne' ? 'movimientos' : 'movimientos_forrajera';
             try {
                 await deleteDoc(doc(db, nombreColeccion, id));
             } catch (error) {
