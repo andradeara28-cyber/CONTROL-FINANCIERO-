@@ -453,8 +453,7 @@
         console.warn("Modo offline no disponible:", err.code);
     });
 
-    let movimientosCarne = [];
-    let movimientosForrajera = [];
+    let movimientosGlobales = [];
 
     function inicializarFechas() {
         const hoy = new Date().toISOString().split('T')[0];
@@ -617,7 +616,7 @@
         }
 
         const nuevoMov = {
-            subTipo: tipoReg,
+            subTipo: tipoReg === 'abono' ? 'cliente' : 'venta',
             fecha,
             hora: obtenerHoraActual(),
             cliente,
@@ -632,8 +631,7 @@
         };
 
         try {
-            const nombreColeccion = modulo === 'carne' ? 'movimientos_carne' : 'movimientos_forrajera';
-            await addDoc(collection(db, nombreColeccion), nuevoMov);
+            await addDoc(collection(db, "movimientos"), nuevoMov);
             alert("¡Movimiento registrado con éxito!");
             document.getElementById(`form-${modulo}`).reset();
             ajustarCamposFormulario(modulo);
@@ -644,21 +642,16 @@
         }
     };
 
-    onSnapshot(collection(db, "movimientos_carne"), (snapshot) => {
-        movimientosCarne = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    onSnapshot(collection(db, "movimientos"), (snapshot) => {
+        movimientosGlobales = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderizarDatosModulo('carne');
-    });
-
-    onSnapshot(collection(db, "movimientos_forrajera"), (snapshot) => {
-        movimientosForrajera = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderizarDatosModulo('forrajera');
     });
 
     window.eliminarMovimiento = async function(id, modulo) {
         if (confirm("¿Estás seguro de eliminar este registro?")) {
             try {
-                const nombreColeccion = modulo === 'carne' ? 'movimientos_carne' : 'movimientos_forrajera';
-                await deleteDoc(doc(db, nombreColeccion, id));
+                await deleteDoc(doc(db, "movimientos", id));
             } catch (error) {
                 console.error("Error al eliminar:", error);
                 alert("No se pudo eliminar el registro.");
@@ -667,7 +660,7 @@
     };
 
     window.renderizarDatosModulo = function(modulo) {
-        const movimientos = modulo === 'carne' ? movimientosCarne : movimientosForrajera;
+        const movimientos = movimientosGlobales;
         const busquedaClienteInv = (document.getElementById(`buscar-cliente-${modulo}`)?.value || '').toUpperCase().trim();
         const clienteSelect = document.getElementById(`filtro-cliente-select-${modulo}`);
         const selectValorActual = clienteSelect.value;
@@ -778,7 +771,7 @@
     };
 
     window.generarPDF = function(modulo) {
-        const movimientos = modulo === 'carne' ? movimientosCarne : movimientosForrajera;
+        const movimientos = movimientosGlobales;
         const filtroCliente = document.getElementById(`filtro-cliente-select-${modulo}`).value;
 
         const datosFiltrados = movimientos.filter(mov => {
