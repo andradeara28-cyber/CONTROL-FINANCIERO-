@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control Financiero - Módulo Carne</title>
+    <title>Control Financiero - Múltiples Módulos</title>
     <!-- Librerías para Generar PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -14,12 +14,17 @@
         h1 { text-align: center; color: #2c3e50; margin-bottom: 25px; }
         h2 { color: #2c3e50; border-bottom: 2px solid #e1e8ed; padding-bottom: 8px; margin-top: 30px; }
         
-        /* Pestañas de Carne */
-        .sub-tabs-carne { display: flex; gap: 10px; margin-bottom: 25px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e1e8ed; }
+        /* Pestañas Principales de Módulos (Carne / Forrajera) */
+        .main-modules-tabs { display: flex; gap: 15px; margin-bottom: 30px; border-bottom: 2px solid #cbd5e1; padding-bottom: 15px; }
+        .module-btn { padding: 14px 25px; border: none; background: #cbd5e1; color: #334155; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 16px; transition: all 0.2s; flex: 1; text-align: center; }
+        .module-btn.active-module { background: #2c3e50; color: white; box-shadow: 0 4px 6px rgba(44, 62, 80, 0.3); }
+
+        /* Pestañas Internas */
+        .sub-tabs { display: flex; gap: 10px; margin-bottom: 25px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e1e8ed; }
         .tab-btn { padding: 12px 20px; border: none; background: #e0e6ed; color: #34495e; font-weight: bold; border-radius: 6px; cursor: pointer; flex: 1; text-align: center; font-size: 15px; transition: all 0.2s; }
         .tab-btn.active-tab { background: #e67e22; color: white; box-shadow: 0 2px 4px rgba(230, 126, 34, 0.3); }
 
-        /* FORMULARIO DE REGISTRO AMPLIO Y VISTOSO (PESTAÑA 1) */
+        /* FORMULARIO DE REGISTRO AMPLIO Y VISTOSO */
         .registro-card-container {
             max-width: 750px;
             margin: 20px auto;
@@ -95,7 +100,7 @@
             background-color: #1a252f;
         }
 
-        /* Dashboard Exclusivo dentro de Pestaña 2 (Inventario Global) */
+        /* Dashboard Global */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 25px; margin-top: 15px; }
         .dash-card { background: #eef2f7; padding: 18px; border-radius: 8px; text-align: center; border-left: 5px solid #2980b9; }
         .dash-card.kilos { border-left-color: #8e44ad; }
@@ -114,10 +119,7 @@
         .tarjeta-cliente h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; border-bottom: 1px dashed #e5e7e9; padding-bottom: 5px; text-transform: uppercase; }
         .tarjeta-cliente p { margin: 5px 0; font-size: 13px; color: #566573; display: flex; justify-content: space-between; }
         .tarjeta-cliente .saldo-acumulado { font-size: 15px; font-weight: bold; margin-top: 10px; padding-top: 6px; border-top: 1px solid #eaeded; display: flex; justify-content: space-between; }
-        .tarjeta-cliente .info-ultimo-mov { font-size: 11px; color: #7f8c8d; font-style: italic; margin-top: 4px; text-align: right; }
-        .btn-ver-desglose { margin-top: 12px; background: #34495e; color: white; border: none; padding: 8px; border-radius: 5px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; text-align: center; }
-        .btn-ver-desglose:hover { background: #2c3e50; }
-
+        
         /* Barrita de Filtros */
         .box-filtro { background: #ebf5fb; border: 1px solid #a9cce3; padding: 12px 18px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         .box-filtro label { font-weight: bold; color: #2980b9; font-size: 13px; }
@@ -129,20 +131,20 @@
         
         /* Tablas */
         .table-responsive { overflow-x: auto; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .table-container { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e1e8ed; font-size: 14px; }
         th { background-color: #f8f9fa; color: #2c3e50; }
         
         .vista-seccion { display: none; }
         .vista-activa { display: block; }
-        .badge-pago { background: #f4f6f9; color: #566573; border: 1px solid #d5dbdb; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        
+        .modulo-contenedor { display: none; }
+        .modulo-activo { display: block; }
+
         .monto-ingreso { color: #2ecc71; font-weight: bold; }
         .monto-egreso { color: #e74c3c; font-weight: bold; }
         .btn-borrar { background: none; color: #e74c3c; border: none; cursor: pointer; padding: 0; font-size: 14px; }
         .btn-pdf { background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; }
         .btn-pdf:hover { background: #c0392b; }
-        .hora-badge { font-weight: bold; color: #7f8c8d; font-size: 13px; }
 
         .acciones-tabla-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 10px; margin-bottom: 25px; }
     </style>
@@ -150,122 +152,230 @@
 <body>
 
 <div class="container">
-    <h1>Módulo Carne 🥩</h1>
+    <h1>Control Financiero - Distribuidora Pirámides 📊</h1>
 
-    <!-- PESTAÑAS CARNE -->
-    <div class="sub-tabs-carne">
-        <button class="tab-btn active-tab" id="btn-sub-cliente" onclick="cambiarSubTabCarne('cliente')">1. Registrar Movimiento</button>
-        <button class="tab-btn" id="btn-sub-inventario" onclick="cambiarSubTabCarne('inventario')">2. Inventario Global e Historial</button>
+    <!-- PESTAÑAS PRINCIPALES DE MÓDULOS -->
+    <div class="main-modules-tabs">
+        <button class="module-btn active-module" id="btn-mod-carne" onclick="cambiarModulo('carne')">🥩 Módulo Carne</button>
+        <button class="module-btn" id="btn-mod-forrajera" onclick="cambiarModulo('forrajera')">🌾 Módulo Forrajera</button>
     </div>
 
-    <!-- PESTAÑA 1: REGISTRO NUEVO MOVIMIENTO AMPLIO -->
-    <div id="vista-carne-cliente" class="vista-seccion vista-activa">
-        <div class="registro-card-container">
-            <div class="registro-card-header">
-                <h2>Registrar Nuevo Movimiento 📝</h2>
-                <p>Captura de notas de venta y abonos de clientes</p>
-            </div>
+    <!-- ================================================= -->
+    <!-- MÓDULO CARNE -->
+    <!-- ================================================= -->
+    <div id="modulo-carne" class="modulo-contenedor modulo-activo">
+        <h2 style="margin-top:0; border:none; color:#e67e22;">Gestión: Módulo Carne 🥩</h2>
 
-            <form id="registro-form">
-                <div class="form-grid-amplio">
-                    <div class="form-group">
-                        <label for="fecha">📅 Fecha:</label>
-                        <input type="date" id="fecha" required>
+        <div class="sub-tabs">
+            <button class="tab-btn active-tab" id="btn-sub-carne-cliente" onclick="cambiarSubTab('carne', 'cliente')">1. Registrar Movimiento</button>
+            <button class="tab-btn" id="btn-sub-carne-inventario" onclick="cambiarSubTab('carne', 'inventario')">2. Inventario Global e Historial</button>
+        </div>
+
+        <!-- Pestaña 1: Registro Carne -->
+        <div id="vista-carne-cliente" class="vista-seccion vista-activa">
+            <div class="registro-card-container">
+                <div class="registro-card-header">
+                    <h2>Registrar Movimiento (Carne) 📝</h2>
+                    <p>Captura de notas de venta y abonos de clientes</p>
+                </div>
+                <form id="form-carne" onsubmit="registrarMovimiento(event, 'carne')">
+                    <div class="form-grid-amplio">
+                        <div class="form-group">
+                            <label for="fecha-carne">📅 Fecha:</label>
+                            <input type="date" id="fecha-carne" required>
+                        </div>
+                        <div id="campos-dinamicos-carne" style="display: contents;"></div>
+                        <button type="submit" class="btn-registrar-grande">💾 Registrar Movimiento Carne</button>
                     </div>
+                </form>
+            </div>
+        </div>
 
-                    <div id="campos-dinamicos-contenedor" style="display: contents;"></div>
-
-                    <button type="submit" class="btn-registrar-grande">💾 Registrar Movimiento</button>
+        <!-- Pestaña 2: Inventario e Historial Carne -->
+        <div id="vista-carne-inventario" class="vista-seccion">
+            <h2>Inventario Global (Carne) 🥩</h2>
+            <div class="dashboard-grid">
+                <div class="dash-card">
+                    <h3>💰 TOTAL VENTAS BRUTAS</h3>
+                    <p id="total-ventas-carne">$0.00</p>
                 </div>
-            </form>
+                <div class="dash-card kilos">
+                    <h3>⚖️ TOTAL KILOS VENDIDOS</h3>
+                    <p id="total-kilos-carne">0.000 KG</p>
+                </div>
+                <div class="dash-card abonado">
+                    <h3>🥩 TOTAL ABONADO CARNE</h3>
+                    <p id="saldo-carne">$0.00</p>
+                </div>
+                <div class="dash-card deuda">
+                    <h3>🚨 DEUDA TOTAL PENDIENTE</h3>
+                    <p id="deuda-total-carne">$0.00</p>
+                </div>
+            </div>
+
+            <div id="bloque-resumen-clientes-carne">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                    <h2 style="margin: 0; border: none;">📊 Estado de Cuentas por Cliente (Carne)</h2>
+                    <div style="width: 260px;">
+                        <input type="text" id="buscar-cliente-carne" placeholder="🔍 Buscar cliente..." oninput="renderizarDatosModulo('carne')" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                    </div>
+                </div>
+                <div class="contenedor-resumen-clientes" id="lista-resumen-clientes-carne"></div>
+            </div>
+
+            <h2>Historial de Registros y Notas (Carne) 📑</h2>
+            <div class="box-filtro">
+                <div class="grupo-filtro">
+                    <label>🔍 Cliente:</label>
+                    <select id="filtro-cliente-select-carne" onchange="renderizarDatosModulo('carne')">
+                        <option value="">-- Todos --</option>
+                    </select>
+                </div>
+                <div class="grupo-filtro">
+                    <label>📅 Desde:</label>
+                    <input type="date" id="filtro-fecha-inicio-carne" onchange="renderizarDatosModulo('carne')">
+                </div>
+                <div class="grupo-filtro">
+                    <label>📅 Hasta:</label>
+                    <input type="date" id="filtro-fecha-fin-carne" onchange="renderizarDatosModulo('carne')">
+                </div>
+                <button type="button" class="btn-limpiar" onclick="limpiarFiltros('carne')">Mostrar Todo</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table-container">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Cliente</th>
+                            <th>Pago</th>
+                            <th>Concepto Detalle</th>
+                            <th>Peso (KG)</th>
+                            <th>Precio</th>
+                            <th>Total Nota</th>
+                            <th>Abono</th>
+                            <th>Saldo Nota</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-cuerpo-carne"></tbody>
+                </table>
+            </div>
+
+            <div class="acciones-tabla-footer">
+                <button type="button" class="btn-pdf" onclick="generarPDF('carne')">📄 Descargar PDF (Carne)</button>
+            </div>
         </div>
     </div>
 
-    <!-- PESTAÑA 2: INVENTARIO GLOBAL E HISTORIAL COMPLETO -->
-    <div id="vista-carne-inventario" class="vista-seccion">
-        <h2>Inventario Global 🥩</h2>
 
-        <!-- DASHBOARD GLOBAL COMPLETO -->
-        <div class="dashboard-grid">
-            <div class="dash-card">
-                <h3>💰 TOTAL VENTAS BRUTAS</h3>
-                <p id="total-ventas-carne">$0.00</p>
-            </div>
-            <div class="dash-card kilos">
-                <h3>⚖️ TOTAL KILOS VENDIDOS</h3>
-                <p id="total-kilos-carne">0.000 KG</p>
-            </div>
-            <div class="dash-card abonado">
-                <h3>🥩 TOTAL ABONADO CARNE</h3>
-                <p id="saldo-carne">$0.00</p>
-            </div>
-            <div class="dash-card deuda">
-                <h3>🚨 DEUDA TOTAL PENDIENTE</h3>
-                <p id="deuda-total-carne">$0.00</p>
+    <!-- ================================================= -->
+    <!-- MÓDULO FORRAJERA -->
+    <!-- ================================================= -->
+    <div id="modulo-forrajera" class="modulo-contenedor">
+        <h2 style="margin-top:0; border:none; color:#27ae60;">Gestión: Módulo Forrajera 🌾</h2>
+
+        <div class="sub-tabs">
+            <button class="tab-btn active-tab" id="btn-sub-forrajera-cliente" onclick="cambiarSubTab('forrajera', 'cliente')">1. Registrar Movimiento</button>
+            <button class="tab-btn" id="btn-sub-forrajera-inventario" onclick="cambiarSubTab('forrajera', 'inventario')">2. Inventario Global e Historial</button>
+        </div>
+
+        <!-- Pestaña 1: Registro Forrajera -->
+        <div id="vista-forrajera-cliente" class="vista-seccion vista-activa">
+            <div class="registro-card-container" style="border-top-color: #27ae60;">
+                <div class="registro-card-header">
+                    <h2>Registrar Movimiento (Forrajera) 📝</h2>
+                    <p>Captura de venta de bultos, alimento, granos y abonos</p>
+                </div>
+                <form id="form-forrajera" onsubmit="registrarMovimiento(event, 'forrajera')">
+                    <div class="form-grid-amplio">
+                        <div class="form-group">
+                            <label for="fecha-forrajera">📅 Fecha:</label>
+                            <input type="date" id="fecha-forrajera" required>
+                        </div>
+                        <div id="campos-dinamicos-forrajera" style="display: contents;"></div>
+                        <button type="submit" class="btn-registrar-grande" style="background-color: #27ae60;">💾 Registrar Movimiento Forrajera</button>
+                    </div>
+                </form>
             </div>
         </div>
 
-        <!-- TARJETAS POR CLIENTE -->
-        <div id="bloque-resumen-clientes">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
-                <h2 style="margin: 0; border: none;">📊 Estado de Cuentas Individuales por Cliente</h2>
-                <div style="width: 260px;">
-                    <input type="text" id="buscar-cliente-inv" placeholder="🔍 Buscar cliente en tarjetas..." oninput="renderizarResumenClientesAcumulado()" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc;">
+        <!-- Pestaña 2: Inventario e Historial Forrajera -->
+        <div id="vista-forrajera-inventario" class="vista-seccion">
+            <h2>Inventario Global (Forrajera) 🌾</h2>
+            <div class="dashboard-grid">
+                <div class="dash-card">
+                    <h3>💰 TOTAL VENTAS BRUTAS</h3>
+                    <p id="total-ventas-forrajera">$0.00</p>
+                </div>
+                <div class="dash-card kilos" style="border-left-color: #27ae60;">
+                    <h3>📦 TOTAL BULTOS / UNIDADES</h3>
+                    <p id="total-kilos-forrajera">0 UNIDADES</p>
+                </div>
+                <div class="dash-card abonado">
+                    <h3>🌾 TOTAL ABONADO FORRAJERA</h3>
+                    <p id="saldo-forrajera">$0.00</p>
+                </div>
+                <div class="dash-card deuda">
+                    <h3>🚨 DEUDA TOTAL PENDIENTE</h3>
+                    <p id="deuda-total-forrajera">$0.00</p>
                 </div>
             </div>
-            <div class="contenedor-resumen-clientes" id="lista-resumen-clientes"></div>
-        </div>
 
-        <!-- HISTORIAL COMPLETO DE CLIENTES EN PESTAÑA 2 -->
-        <h2>Historial de Registros y Notas 📑</h2>
-
-        <!-- BARRA DE FILTROS -->
-        <div class="box-filtro">
-            <div class="grupo-filtro">
-                <label>🔍 Cliente:</label>
-                <select id="filtro-cliente-select" onchange="aplicarFiltros()">
-                    <option value="">-- Todos --</option>
-                </select>
-                <input type="text" id="filtro-cliente-input" placeholder="Escribe nombre..." oninput="aplicarFiltros()">
+            <div id="bloque-resumen-clientes-forrajera">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                    <h2 style="margin: 0; border: none;">📊 Estado de Cuentas por Cliente (Forrajera)</h2>
+                    <div style="width: 260px;">
+                        <input type="text" id="buscar-cliente-forrajera" placeholder="🔍 Buscar cliente..." oninput="renderizarDatosModulo('forrajera')" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                    </div>
+                </div>
+                <div class="contenedor-resumen-clientes" id="lista-resumen-clientes-forrajera"></div>
             </div>
 
-            <div class="grupo-filtro">
-                <label>📅 Desde:</label>
-                <input type="date" id="filtro-fecha-inicio" onchange="aplicarFiltros()">
+            <h2>Historial de Registros y Notas (Forrajera) 📑</h2>
+            <div class="box-filtro">
+                <div class="grupo-filtro">
+                    <label>🔍 Cliente:</label>
+                    <select id="filtro-cliente-select-forrajera" onchange="renderizarDatosModulo('forrajera')">
+                        <option value="">-- Todos --</option>
+                    </select>
+                </div>
+                <div class="grupo-filtro">
+                    <label>📅 Desde:</label>
+                    <input type="date" id="filtro-fecha-inicio-forrajera" onchange="renderizarDatosModulo('forrajera')">
+                </div>
+                <div class="grupo-filtro">
+                    <label>📅 Hasta:</label>
+                    <input type="date" id="filtro-fecha-fin-forrajera" onchange="renderizarDatosModulo('forrajera')">
+                </div>
+                <button type="button" class="btn-limpiar" onclick="limpiarFiltros('forrajera')">Mostrar Todo</button>
             </div>
 
-            <div class="grupo-filtro">
-                <label>📅 Hasta:</label>
-                <input type="date" id="filtro-fecha-fin" onchange="aplicarFiltros()">
+            <div class="table-responsive">
+                <table class="table-container">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Cliente</th>
+                            <th>Pago</th>
+                            <th>Concepto / Producto</th>
+                            <th>Cantidad (Bultos/Pzas)</th>
+                            <th>Precio Unitario</th>
+                            <th>Total Nota</th>
+                            <th>Abono</th>
+                            <th>Saldo Nota</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-cuerpo-forrajera"></tbody>
+                </table>
             </div>
 
-            <button type="button" class="btn-limpiar" onclick="limpiarFiltros()">Mostrar Todo</button>
-        </div>
-
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Hora</th>
-                        <th>Nombre Cliente</th>
-                        <th>Forma de Pago</th>
-                        <th>Concepto Detalle</th>
-                        <th>Peso (KG)</th>
-                        <th>Precio</th>
-                        <th>Total Nota</th>
-                        <th>Abono</th>
-                        <th>Saldo Nota</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="carne-cliente-cuerpo"></tbody>
-            </table>
-        </div>
-
-        <!-- BOTÓN DE PDF GLOBAL ABAJO DE LA TABLA -->
-        <div class="acciones-tabla-footer">
-            <button type="button" class="btn-pdf" onclick="generarPDFFiltrado()">📄 Descargar PDF de los Registros Filtrados</button>
+            <div class="acciones-tabla-footer">
+                <button type="button" class="btn-pdf" onclick="generarPDF('forrajera')" style="background-color: #27ae60;">📄 Descargar PDF (Forrajera)</button>
+            </div>
         </div>
     </div>
 
@@ -275,7 +385,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, enableMultiTabIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Configuración de Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyCD-o8EvCSkEVMh74e68jqtHnol5Gfp3WA",
         authDomain: "distribuidora-piramides.firebaseapp.com",
@@ -289,27 +398,41 @@
     const db = getFirestore(app);
 
     enableMultiTabIndexedDbPersistence(db).catch((err) => {
-        console.warn("No se pudo activar el modo offline:", err.code);
+        console.warn("Modo offline no disponible:", err.code);
     });
 
-    let movimientos = [];
-    let subTabCarneActual = 'cliente';
+    let movimientosCarne = [];
+    let movimientosForrajera = [];
 
-    const form = document.getElementById('registro-form');
-    const inputFecha = document.getElementById('fecha');
-    const camposDinamicos = document.getElementById('campos-dinamicos-contenedor');
+    // Inicializar fechas de hoy
+    function inicializarFechas() {
+        const hoy = new Date().toISOString().split('T')[0];
+        document.getElementById('fecha-carne').value = hoy;
+        document.getElementById('fecha-forrajera').value = hoy;
+    }
+    inicializarFechas();
+
+    window.cambiarModulo = function(modulo) {
+        document.querySelectorAll('.module-btn').forEach(btn => btn.classList.remove('active-module'));
+        document.querySelectorAll('.modulo-contenedor').forEach(mod => mod.classList.remove('modulo-activo'));
+        document.getElementById(`btn-mod-${modulo}`).classList.add('active-module');
+        document.getElementById(`modulo-${modulo}`).classList.add('active-module');
+    };
+
+    window.cambiarSubTab = function(modulo, subTab) {
+        document.querySelectorAll(`#modulo-${modulo} .tab-btn`).forEach(btn => btn.classList.remove('active-tab'));
+        document.getElementById(`btn-sub-${modulo}-${subTab}`).classList.add('active-tab');
+        
+        document.querySelectorAll(`#modulo-${modulo} .vista-seccion`).forEach(v => v.classList.remove('vista-activa'));
+        document.getElementById(`vista-${modulo}-${subTab}`).classList.add('vista-activa');
+    };
 
     function formatearMoneda(valor) {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2
-        }).format(valor);
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(valor);
     }
 
     function obtenerHoraActual() {
-        const ahora = new Date();
-        return ahora.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     }
 
     function numeroALetras(monto) {
@@ -322,14 +445,12 @@
         let strCentavos = (centavos < 10 ? '0' : '') + centavos + '/100 M.N.';
 
         if (entero === 0) return `CERO PESOS ${strCentavos}`;
-
         let texto = '';
         if (entero >= 1000) {
             let miles = Math.floor(entero / 1000);
             texto += (miles === 1 ? 'UN MIL ' : unidades[miles] + ' MIL ');
             entero %= 1000;
         }
-
         if (entero >= 100) {
             let cientos = Math.floor(entero / 100);
             if (cientos === 1 && entero % 100 === 0) texto += 'CIEN ';
@@ -340,7 +461,6 @@
             else texto += unidades[cientos] + 'CIENTOS ';
             entero %= 100;
         }
-
         if (entero >= 10 && entero <= 15 && especiales[entero]) {
             texto += especiales[entero] + ' ';
         } else if (entero >= 10) {
@@ -351,26 +471,283 @@
         } else if (entero > 0) {
             texto += unidades[entero] + ' ';
         }
-
         return `${texto.trim()} PESOS ${strCentavos}`;
     }
 
-    // PDF GENERADOR
-    window.generarPDFFiltrado = function() {
-        const clienteSelect = document.getElementById('filtro-cliente-select').value.toUpperCase().trim();
-        const clienteInput = document.getElementById('filtro-cliente-input').value.toUpperCase().trim();
-        const filtroCliente = clienteSelect || clienteInput;
+    // AJUSTAR CAMPOS DINÁMICOS FORMULARIOS
+    window.ajustarCamposFormulario = function(modulo) {
+        const tipoRegistro = document.getElementById(`tipo_reg_${modulo}`)?.value || 'venta';
+        const contenedor = document.getElementById(`campos-dinamicos-${modulo}`);
+        
+        let labelUnidad = modulo === 'carne' ? '⚖️ Peso (KG):' : '📦 Cantidad (Bultos/Pzas):';
+        let placeholderUnidad = modulo === 'carne' ? '0.000' : '0';
+        let stepUnidad = modulo === 'carne' ? '0.001' : '1';
+        let placeholderConcepto = modulo === 'carne' ? 'Ej. PATA, PANZA, BISTEC...' : 'Ej. MAÍZ, ALIMENTO PURINA, SAL MINERAL...';
+
+        let html = `
+            <div class="form-group">
+                <label for="tipo_reg_${modulo}">📋 Tipo de Registro:</label>
+                <select id="tipo_reg_${modulo}" onchange="ajustarCamposFormulario('${modulo}')" required>
+                    <option value="venta" ${tipoRegistro === 'venta' ? 'selected' : ''}>📝 Nueva Venta (Nota)</option>
+                    <option value="abono" ${tipoRegistro === 'abono' ? 'selected' : ''}>💵 Solo Abono / Pago</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="nombre_${modulo}">👤 Nombre del Cliente:</label>
+                <input type="text" id="nombre_${modulo}" placeholder="Ej. JUAN PÉREZ" required>
+            </div>
+            <div class="form-group">
+                <label for="pago_${modulo}">💳 Forma de Pago:</label>
+                <select id="pago_${modulo}" required>
+                    <option value="" disabled selected>Seleccionar...</option>
+                    <option value="Efectivo">💵 Efectivo</option>
+                    <option value="Transferencia">📱 Transferencia</option>
+                    <option value="Tarjeta">💳 Tarjeta</option>
+                </select>
+            </div>
+            <div class="form-group form-group-full">
+                <label for="concepto_${modulo}">🥩 Concepto / Detalle:</label>
+                <input type="text" id="concepto_${modulo}" placeholder="${placeholderConcepto}" required>
+            </div>
+        `;
+
+        if (tipoRegistro === 'venta') {
+            html += `
+                <div class="form-group">
+                    <label for="cantidad_${modulo}">${labelUnidad}</label>
+                    <input type="number" id="cantidad_${modulo}" placeholder="${placeholderUnidad}" min="0" step="${stepUnidad}" required>
+                </div>
+                <div class="form-group">
+                    <label for="precio_${modulo}">🏷️ Precio Unitario ($):</label>
+                    <input type="number" id="precio_${modulo}" placeholder="$0.00" min="0" step="0.01" required>
+                </div>
+                <div class="form-group form-group-full">
+                    <label for="abono_${modulo}">💵 Abono Inicial ($):</label>
+                    <input type="number" id="abono_${modulo}" placeholder="$0.00 (Crédito = 0)" min="0" step="0.01" value="0" required>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="form-group form-group-full">
+                    <label for="abono_${modulo}">💵 Monto del Abono ($):</label>
+                    <input type="number" id="abono_${modulo}" placeholder="$0.00" min="0.01" step="0.01" required>
+                </div>
+            `;
+        }
+        contenedor.innerHTML = html;
+    };
+
+    ajustarCamposFormulario('carne');
+    ajustarCamposFormulario('forrajera');
+
+    // REGISTRAR EN FIREBASE
+    window.registrarMovimiento = async function(e, modulo) {
+        e.preventDefault();
+        const tipoReg = document.getElementById(`tipo_reg_${modulo}`).value;
+        const fecha = document.getElementById(`fecha-${modulo}`).value;
+        const cliente = document.getElementById(`nombre_${modulo}`).value.trim().toUpperCase();
+        const metodoPago = document.getElementById(`pago_${modulo}`).value;
+        const concepto = document.getElementById(`concepto_${modulo}`).value.trim().toUpperCase();
+        
+        let cantidad = 0;
+        let precio = 0;
+        let abono = 0;
+        let montoCalculado = 0;
+
+        if (tipoReg === 'venta') {
+            cantidad = parseFloat(document.getElementById(`cantidad_${modulo}`).value) || 0;
+            precio = parseFloat(document.getElementById(`precio_${modulo}`).value) || 0;
+            abono = parseFloat(document.getElementById(`abono_${modulo}`).value) || 0;
+            montoCalculado = cantidad * precio;
+        } else {
+            abono = parseFloat(document.getElementById(`abono_${modulo}`).value) || 0;
+            montoCalculado = 0; // El abono puro no genera cargo a deuda nueva
+        }
+
+        const nuevoMov = {
+            subTipo: tipoReg,
+            fecha,
+            hora: obtenerHoraActual(),
+            cliente,
+            metodoPago,
+            concepto,
+            peso: cantidad, // Usamos la misma propiedad numérica para filtros/suma (kilos o bultos)
+            precio,
+            abono,
+            montoCalculado,
+            isAbonoPuro: tipoReg === 'abono',
+            timestamp: Date.now()
+        };
+
+        try {
+            const nombreColeccion = modulo === 'carne' ? 'movimientos_carne' : 'movimientos_forrajera';
+            await addDoc(collection(db, nombreColeccion), nuevoMov);
+            alert("¡Movimiento registrado con éxito!");
+            document.getElementById(`form-${modulo}`).reset();
+            ajustarCamposFormulario(modulo);
+            inicializarFechas();
+        } catch (error) {
+            console.error("Error al guardar:", error);
+            alert("Hubo un error al guardar el registro en la base de datos.");
+        }
+    };
+
+    // ESCUCHAR CAMBIOS FIREBASE EN TIEMPO REAL
+    onSnapshot(collection(db, "movimientos_carne"), (snapshot) => {
+        movimientosCarne = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderizarDatosModulo('carne');
+    });
+
+    onSnapshot(collection(db, "movimientos_forrajera"), (snapshot) => {
+        movimientosForrajera = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderizarDatosModulo('forrajera');
+    });
+
+    window.eliminarMovimiento = async function(id, modulo) {
+        if (confirm("¿Estás seguro de eliminar este registro?")) {
+            try {
+                const nombreColeccion = modulo === 'carne' ? 'movimientos_carne' : 'movimientos_forrajera';
+                await deleteDoc(doc(db, nombreColeccion, id));
+            } catch (error) {
+                console.error("Error al eliminar:", error);
+                alert("No se pudo eliminar el registro.");
+            }
+        }
+    };
+
+    // RENDERIZAR DATOS Y FILTROS POR MÓDULO
+    window.renderizarDatosModulo = function(modulo) {
+        const movimientos = modulo === 'carne' ? movimientosCarne : movimientosForrajera;
+        const busquedaClienteInv = (document.getElementById(`buscar-cliente-${modulo}`)?.value || '').toUpperCase().trim();
+        const clienteSelect = document.getElementById(`filtro-cliente-select-${modulo}`);
+        const selectValorActual = clienteSelect.value;
+        
+        // Actualizar opciones del Select de filtro
+        clienteSelect.innerHTML = '<option value="">-- Todos --</option>';
+        let nombresUnicos = new Set();
+        movimientos.forEach(m => { if(m.cliente) nombresUnicos.add(m.cliente); });
+        Array.from(nombresUnicos).sort().forEach(nombre => {
+            const opt = document.createElement('option');
+            opt.value = nombre;
+            opt.textContent = nombre;
+            clienteSelect.appendChild(opt);
+        });
+        clienteSelect.value = selectValorActual;
+
+        const filtroClienteSel = clienteSelect.value;
+        const filtroFechaInicio = document.getElementById(`filtro-fecha-inicio-${modulo}`).value;
+        const filtroFechaFin = document.getElementById(`filtro-fecha-fin-${modulo}`).value;
+
+        // Filtrar datos para tabla e historial
+        const datosFiltrados = movimientos.filter(mov => {
+            if (filtroClienteSel && mov.cliente !== filtroClienteSel) return false;
+            if (filtroFechaInicio && mov.fecha < filtroFechaInicio) return false;
+            if (filtroFechaFin && mov.fecha > filtroFechaFin) return false;
+            return true;
+        }).sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || b.timestamp - a.timestamp);
+
+        // Renderizar Tabla
+        const tbody = document.getElementById(`tabla-cuerpo-${modulo}`);
+        tbody.innerHTML = '';
+        datosFiltrados.forEach(mov => {
+            const totalNota = parseFloat(mov.montoCalculado || 0);
+            const abonoNota = parseFloat(mov.abono || 0);
+            const saldoNota = totalNota - abonoNota;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${mov.fecha}</td>
+                <td><span style="color:#7f8c8d; font-size:12px;">${mov.hora || ''}</span></td>
+                <td><strong>${mov.cliente}</strong></td>
+                <td><span style="background:#f4f6f9; padding:3px 6px; border-radius:4px; font-size:12px; border:1px solid #d5dbdb;">${mov.metodoPago || 'Efectivo'}</span></td>
+                <td>${mov.concepto || (mov.isAbonoPuro ? 'ABONO A CUENTA' : 'VENTA')}</td>
+                <td>${mov.isAbonoPuro ? '-' : (modulo === 'carne' ? `${parseFloat(mov.peso || 0).toFixed(3)} KG` : `${mov.peso || 0} Pzas`)}</td>
+                <td>${mov.isAbonoPuro ? '-' : formatearMoneda(mov.precio)}</td>
+                <td><strong>${formatearMoneda(totalNota)}</strong></td>
+                <td class="monto-ingreso">${formatearMoneda(abonoNota)}</td>
+                <td class="${saldoNota <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldoNota)}</td>
+                <td><button type="button" class="btn-borrar" onclick="eliminarMovimiento('${mov.id}', '${modulo}')">🗑️ Borrar</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Calcular Totales Dashboard Global
+        let totalVentas = 0;
+        let totalCantidadUnidades = 0;
+        let totalAbonado = 0;
+        movimientos.forEach(mov => {
+            totalVentas += parseFloat(mov.montoCalculado || 0);
+            totalCantidadUnidades += parseFloat(mov.peso || 0);
+            totalAbonado += parseFloat(mov.abono || 0);
+        });
+        let deudaTotal = totalVentas - totalAbonado;
+
+        document.getElementById(`total-ventas-${modulo}`).innerText = formatearMoneda(totalVentas);
+        document.getElementById(`total-kilos-${modulo}`).innerText = modulo === 'carne' ? `${totalCantidadUnidades.toFixed(3)} KG` : `${totalCantidadUnidades} UNIDADES`;
+        document.getElementById(`saldo-${modulo}`).innerText = formatearMoneda(totalAbonado);
+        document.getElementById(`deuda-total-${modulo}`).innerText = formatearMoneda(deudaTotal > 0 ? deudaTotal : 0);
+
+        // Renderizar Tarjetas Acumuladas por Cliente
+        const contenedorTarjetas = document.getElementById(`lista-resumen-clientes-${modulo}`);
+        contenedorTarjetas.innerHTML = '';
+        let cuentasClientes = {};
+
+        movimientos.forEach(mov => {
+            let nombre = (mov.cliente || 'VARIOS').trim().toUpperCase();
+            if (busquedaClienteInv && !nombre.includes(busquedaClienteInv)) return;
+
+            if (!cuentasClientes[nombre]) {
+                cuentasClientes[nombre] = { comprado: 0, abonado: 0 };
+            }
+            cuentasClientes[nombre].comprado += parseFloat(mov.montoCalculado || 0);
+            cuentasClientes[nombre].abonado += parseFloat(mov.abono || 0);
+        });
+
+        Object.keys(cuentasClientes).sort().forEach(nombre => {
+            const info = cuentasClientes[nombre];
+            const saldoPendienteCliente = info.comprado - info.abonado;
+
+            const div = document.createElement('div');
+            div.className = 'tarjeta-cliente';
+            div.style.borderTopColor = saldoPendienteCliente <= 0 ? '#2ecc71' : '#e74c3c';
+            div.innerHTML = `
+                <div>
+                    <h4>👤 ${nombre}</h4>
+                    <p><span>Total Comprado:</span> <span>${formatearMoneda(info.comprado)}</span></p>
+                    <p><span>Total Abonado:</span> <span class="monto-ingreso">${formatearMoneda(info.abonado)}</span></p>
+                    <div class="saldo-acumulado">
+                        <span>Deuda Pendiente:</span>
+                        <span class="${saldoPendienteCliente <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldoPendienteCliente)}</span>
+                    </div>
+                </div>
+            `;
+            contenedorTarjetas.appendChild(div);
+        });
+    };
+
+    window.limpiarFiltros = function(modulo) {
+        document.getElementById(`filtro-cliente-select-${modulo}`).value = '';
+        document.getElementById(`filtro-fecha-inicio-${modulo}`).value = '';
+        document.getElementById(`filtro-fecha-fin-${modulo}`).value = '';
+        renderizarDatosModulo(modulo);
+    };
+
+    // GENERADOR PDF PROFESIONAL
+    window.generarPDF = function(modulo) {
+        const movimientos = modulo === 'carne' ? movimientosCarne : movimientosForrajera;
+        const filtroCliente = document.getElementById(`filtro-cliente-select-${modulo}`).value;
 
         const datosFiltrados = movimientos.filter(mov => {
-            if (mov.subTipo !== 'cliente') return false;
-            let clienteNombre = (mov.cliente || '').toUpperCase();
-            if (filtroCliente && !clienteNombre.includes(filtroCliente)) return false;
-            if (!coincideRangoFecha(mov.fecha)) return false;
+            if (filtroCliente && mov.cliente !== filtroCliente) return false;
+            const fInicio = document.getElementById(`filtro-fecha-inicio-${modulo}`).value;
+            const fFin = document.getElementById(`filtro-fecha-fin-${modulo}`).value;
+            if (fInicio && mov.fecha < fInicio) return false;
+            if (fFin && mov.fecha > fFin) return false;
             return true;
         }).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
         if (datosFiltrados.length === 0) {
-            alert("No hay registros en la lista con los filtros seleccionados.");
+            alert("No hay registros disponibles para generar el PDF con los filtros actuales.");
             return;
         }
 
@@ -378,12 +755,12 @@
         const doc = new jsPDF({ unit: 'mm', format: 'letter' });
 
         const colorAzul = [18, 52, 102];
-        const colorNaranja = [220, 100, 20];
+        const colorAccent = modulo === 'carne' ? [220, 100, 20] : [39, 174, 96];
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
-        doc.setTextColor(...colorNaranja);
-        doc.text("VENTA DE CARNE DE RES Y SUS DERIVADOS", 105, 12, { align: "center" });
+        doc.setTextColor(...colorAccent);
+        doc.text(`REPORTE OFICIAL - MÓDULO ${modulo.toUpperCase()}`, 105, 12, { align: "center" });
 
         doc.setFontSize(14);
         doc.setTextColor(...colorAzul);
@@ -402,13 +779,13 @@
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
         doc.setTextColor(...colorAzul);
-        doc.text("REPORTE DE MOVIMIENTOS Y NOTAS", 16, 39);
+        doc.text("ESTADO DE CUENTA Y MOVIMIENTOS", 16, 39);
 
         doc.setFontSize(9);
-        doc.setTextColor(...colorNaranja);
-        doc.text("CLIENTE / FILTRO:", 16, 46);
+        doc.setTextColor(...colorAccent);
+        doc.text("CLIENTE:", 16, 46);
         doc.setTextColor(0, 0, 0);
-        doc.text(filtroCliente ? filtroCliente : "TODOS LOS CLIENTES", 48, 46);
+        doc.text(filtroCliente ? filtroCliente : "TODOS LOS CLIENTES", 35, 46);
 
         const hoy = new Date().toLocaleDateString('es-MX');
         doc.setTextColor(...colorAzul);
@@ -422,19 +799,18 @@
         const filasTabla = datosFiltrados.map(mov => {
             const totalNota = parseFloat(mov.montoCalculado || 0);
             const abonoNota = parseFloat(mov.abono || 0);
-
             totalComprado += totalNota;
             totalAbonado += abonoNota;
 
-            const pesoStr = mov.isAbonoPuro ? '-' : `${parseFloat(mov.peso || 0).toFixed(3)} KG`;
+            const unidadStr = mov.isAbonoPuro ? '-' : (modulo === 'carne' ? `${parseFloat(mov.peso || 0).toFixed(3)} KG` : `${mov.peso || 0} Pzas`);
             const precioStr = mov.isAbonoPuro ? '-' : formatearMoneda(parseFloat(mov.precio || 0));
 
             return [
-                formatearFecha(mov.fecha),
+                mov.fecha,
                 mov.cliente,
-                mov.concepto || (mov.isAbonoPuro ? 'ABONO A CUENTA' : 'COMPRA'),
+                mov.concepto || (mov.isAbonoPuro ? 'ABONO A CUENTA' : 'VENTA'),
                 mov.metodoPago || 'Efectivo',
-                pesoStr,
+                unidadStr,
                 precioStr,
                 formatearMoneda(totalNota),
                 formatearMoneda(abonoNota)
@@ -445,26 +821,17 @@
 
         doc.autoTable({
             startY: 56,
-            head: [['FECHA', 'CLIENTE', 'DETALLE', 'PAGO', 'PESO', 'PRECIO', 'TOTAL', 'ABONADO']],
+            head: [['FECHA', 'CLIENTE', 'DETALLE', 'PAGO', 'CANTIDAD', 'PRECIO', 'TOTAL', 'ABONADO']],
             body: filasTabla,
             theme: 'grid',
-            headStyles: {
-                fillColor: colorAzul,
-                textColor: [255, 255, 255],
-                fontSize: 8,
-                halign: 'center',
-                fontStyle: 'bold'
-            },
-            bodyStyles: {
-                fontSize: 8,
-                textColor: [30, 30, 30]
-            },
+            headStyles: { fillColor: colorAzul, textColor: [255, 255, 255], fontSize: 8, halign: 'center', fontStyle: 'bold' },
+            bodyStyles: { fontSize: 8, textColor: [30, 30, 30] },
             columnStyles: {
                 0: { halign: 'center', cellWidth: 20 },
-                1: { halign: 'left', cellWidth: 30 },
+                1: { halign: 'left', cellWidth: 32 },
                 2: { halign: 'left' },
                 3: { halign: 'center', cellWidth: 20 },
-                4: { halign: 'right', cellWidth: 18 },
+                4: { halign: 'right', cellWidth: 22 },
                 5: { halign: 'right', cellWidth: 20 },
                 6: { halign: 'right', cellWidth: 22 },
                 7: { halign: 'right', cellWidth: 22 }
@@ -473,11 +840,7 @@
         });
 
         let finalY = doc.lastAutoTable.finalY + 10;
-
-        if (finalY > 230) {
-            doc.addPage();
-            finalY = 20;
-        }
+        if (finalY > 230) { doc.addPage(); finalY = 20; }
 
         doc.setFillColor(245, 247, 250);
         doc.setDrawColor(200, 200, 200);
@@ -487,7 +850,7 @@
         doc.setFont("helvetica", "bold");
         doc.setTextColor(50, 50, 50);
 
-        doc.text("TOTAL COMPRAS:", 114, finalY + 7);
+        doc.text("TOTAL VENTAS:", 114, finalY + 7);
         doc.text(formatearMoneda(totalComprado), 195, finalY + 7, { align: "right" });
 
         doc.text("TOTAL ABONADO:", 114, finalY + 14);
@@ -512,363 +875,10 @@
         doc.setTextColor(100, 100, 100);
         doc.text("FIRMA DE CONFORMIDAD", 50, finalY + 36, { align: "center" });
 
-        const nombreArchivo = filtroCliente ? `Reporte_${filtroCliente.replace(/\s+/g, '_')}.pdf` : `Reporte_General_Carne.pdf`;
+        const nombreArchivo = filtroCliente ? `Reporte_${modulo}_${filtroCliente.replace(/\s+/g, '_')}.pdf` : `Reporte_General_${modulo}.pdf`;
         doc.save(nombreArchivo);
     };
-
-    window.ajustarCamposFormulario = function() {
-        const tipoRegistro = document.getElementById('c_tipo_registro')?.value || 'venta';
-        
-        let htmlCampos = `
-            <div class="form-group">
-                <label for="c_tipo_registro">📋 Tipo de Registro:</label>
-                <select id="c_tipo_registro" onchange="ajustarCamposFormulario()" required>
-                    <option value="venta" ${tipoRegistro === 'venta' ? 'selected' : ''}>📝 Nueva Venta (Nota)</option>
-                    <option value="abono" ${tipoRegistro === 'abono' ? 'selected' : ''}>💵 Solo Abono / Pago</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="c_nombre">👤 Nombre del Cliente:</label>
-                <input type="text" id="c_nombre" placeholder="Ej. PEDRO PEREZ" required>
-            </div>
-
-            <div class="form-group">
-                <label for="c_pago">💳 Forma de Pago:</label>
-                <select id="c_pago" required>
-                    <option value="" disabled selected>Seleccionar...</option>
-                    <option value="Efectivo">💵 Efectivo</option>
-                    <option value="Transferencia">📱 Transferencia</option>
-                    <option value="Tarjeta">💳 Tarjeta</option>
-                </select>
-            </div>
-
-            <div class="form-group form-group-full">
-                <label for="c_concepto">🥩 Concepto / Detalle:</label>
-                <input type="text" id="c_concepto" placeholder="Ej. PATA, PANZA, BISTEC..." required>
-            </div>
-        `;
-
-        if (tipoRegistro === 'venta') {
-            htmlCampos += `
-                <div class="form-group">
-                    <label for="c_peso">⚖️ Peso (KG):</label>
-                    <input type="number" id="c_peso" placeholder="0.000" min="0" step="0.001" required>
-                </div>
-                <div class="form-group">
-                    <label for="c_precio">🏷️ Precio ($):</label>
-                    <input type="number" id="c_precio" placeholder="$0.00" min="0" step="0.01" required>
-                </div>
-                <div class="form-group form-group-full">
-                    <label for="c_abono">💵 Abono Inicial ($):</label>
-                    <input type="number" id="c_abono" placeholder="$0.00 (Si deja a crédito coloque 0)" min="0" step="0.01" value="0" required>
-                </div>
-            `;
-        } else {
-            htmlCampos += `
-                <div class="form-group form-group-full">
-                    <label for="c_abono">💵 Monto del Abono ($):</label>
-                    <input type="number" id="c_abono" placeholder="$0.00" min="0.01" step="0.01" required>
-                </div>
-            `;
-        }
-        camposDinamicos.innerHTML = htmlCampos;
-    };
-
-    window.cambiarSubTabCarne = function(subTab) {
-        subTabCarneActual = subTab;
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-tab'));
-        document.getElementById(`btn-sub-${subTab}`).classList.add('active-tab');
-        
-        document.querySelectorAll('.vista-seccion').forEach(v => v.classList.remove('vista-activa'));
-
-        if (subTabCarneActual === 'cliente') {
-            document.getElementById('vista-carne-cliente').classList.add('vista-activa');
-        } else {
-            document.getElementById('vista-carne-inventario').classList.add('vista-activa');
-        }
-    };
-
-    function establecerFechaDeHoy() {
-        const hoy = new Date();
-        let mm = hoy.getMonth() + 1;
-        let dd = hoy.getDate();
-        if (dd < 10) dd = '0' + dd;
-        if (mm < 10) mm = '0' + mm;
-        inputFecha.value = `${hoy.getFullYear()}-${mm}-${dd}`;
-    }
-
-    function formatearFecha(f) {
-        if(!f) return '';
-        const p = f.split('-');
-        return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : f;
-    }
-
-    function calcularSaldosYTotales() {
-        let totalVentasBrutas = 0;
-        let totalKilosVendidos = 0;
-        let totalAbonadoCarne = 0;
-
-        movimientos.forEach(mov => {
-            if (mov.subTipo === 'cliente') {
-                totalVentasBrutas += parseFloat(mov.montoCalculado || 0);
-                totalKilosVendidos += parseFloat(mov.peso || 0);
-                totalAbonadoCarne += parseFloat(mov.abono || 0);
-            }
-        });
-
-        const deudaTotal = totalVentasBrutas - totalAbonadoCarne;
-
-        document.getElementById('total-ventas-carne').innerText = formatearMoneda(totalVentasBrutas);
-        document.getElementById('total-kilos-carne').innerText = `${totalKilosVendidos.toFixed(3)} KG`;
-        document.getElementById('saldo-carne').innerText = formatearMoneda(totalAbonadoCarne);
-        document.getElementById('deuda-total-carne').innerText = formatearMoneda(deudaTotal > 0 ? deudaTotal : 0);
-    }
-
-    function actualizarSelectClientesFiltro() {
-        const select = document.getElementById('filtro-cliente-select');
-        const valorActual = select.value;
-        select.innerHTML = '<option value="">-- Todos --</option>';
-
-        let nombresUnicos = new Set();
-        movimientos.forEach(mov => {
-            if (mov.subTipo === 'cliente' && mov.cliente) {
-                nombresUnicos.add(mov.cliente.toUpperCase().trim());
-            }
-        });
-
-        Array.from(nombresUnicos).sort().forEach(nombre => {
-            const option = document.createElement('option');
-            option.value = nombre;
-            option.textContent = nombre;
-            select.appendChild(option);
-        });
-
-        select.value = valorActual;
-    }
-
-    function coincideRangoFecha(fechaMovStr) {
-        const fechaInicio = document.getElementById('filtro-fecha-inicio').value;
-        const fechaFin = document.getElementById('filtro-fecha-fin').value;
-
-        if (!fechaMovStr) return true;
-        if (fechaInicio && fechaMovStr < fechaInicio) return false;
-        if (fechaFin && fechaMovStr > fechaFin) return false;
-
-        return true;
-    }
-
-    window.aplicarFiltros = function() {
-        renderizarCarneCliente();
-        renderizarResumenClientesAcumulado();
-    };
-
-    window.limpiarFiltros = function() {
-        document.getElementById('filtro-cliente-select').value = '';
-        document.getElementById('filtro-cliente-input').value = '';
-        document.getElementById('filtro-fecha-inicio').value = '';
-        document.getElementById('filtro-fecha-fin').value = '';
-        aplicarFiltros();
-    };
-
-    window.irADetalleCliente = function(nombreCliente) {
-        cambiarSubTabCarne('inventario');
-        document.getElementById('filtro-cliente-select').value = nombreCliente;
-        document.getElementById('filtro-cliente-input').value = '';
-        aplicarFiltros();
-        
-        document.getElementById('filtro-cliente-select').scrollIntoView({ behavior: 'smooth' });
-    };
-
-    function renderizarResumenClientesAcumulado() {
-        const contenedor = document.getElementById('lista-resumen-clientes');
-        contenedor.innerHTML = '';
-        
-        let cuentasClientes = {};
-        const filtroBusquedaInv = (document.getElementById('buscar-cliente-inv')?.value || '').toUpperCase().trim();
-
-        movimientos.forEach(mov => {
-            if (mov.subTipo === 'cliente') {
-                let nombre = (mov.cliente || 'VARIOS').trim().toUpperCase();
-
-                if (filtroBusquedaInv && !nombre.includes(filtroBusquedaInv)) return;
-
-                let totalNota = parseFloat(mov.montoCalculado || 0);
-                let abonoNota = parseFloat(mov.abono || 0);
-
-                if (!cuentasClientes[nombre]) {
-                    cuentasClientes[nombre] = { comprado: 0, abonado: 0, ultimaFecha: mov.fecha };
-                }
-                cuentasClientes[nombre].comprado += totalNota;
-                cuentasClientes[nombre].abonado += abonoNota;
-
-                if (mov.fecha > cuentasClientes[nombre].ultimaFecha) {
-                    cuentasClientes[nombre].ultimaFecha = mov.fecha;
-                }
-            }
-        });
-
-        const listaNombres = Object.keys(cuentasClientes).sort();
-
-        listaNombres.forEach(nombre => {
-            const info = cuentasClientes[nombre];
-            const saldoTotalPendiente = info.comprado - info.abonado;
-
-            const div = document.createElement('div');
-            div.className = 'tarjeta-cliente';
-            div.style.borderTopColor = saldoTotalPendiente <= 0 ? '#2ecc71' : '#e74c3c';
-
-            div.innerHTML = `
-                <div>
-                    <h4>👤 ${nombre}</h4>
-                    <p><span>Total Comprado:</span> <span>${formatearMoneda(info.comprado)}</span></p>
-                    <p><span>Total Abonado:</span> <span class="monto-ingreso">${formatearMoneda(info.abonado)}</span></p>
-                    <div class="saldo-acumulado">
-                        <span>Deuda Pendiente:</span>
-                        <span class="${saldoTotalPendiente <= 0 ? 'monto-ingreso' : 'monto-egreso'}">
-                            ${formatearMoneda(saldoTotalPendiente)}
-                        </span>
-                    </div>
-                    <div class="info-ultimo-mov">Último Movimiento: ${formatearFecha(info.ultimaFecha)}</div>
-                </div>
-                <button type="button" class="btn-ver-desglose" onclick="irADetalleCliente('${nombre}')">👁️ Ver Historial en Tabla</button>
-            `;
-            contenedor.appendChild(div);
-        });
-
-        if (listaNombres.length === 0) {
-            contenedor.innerHTML = `<p style="color: #7f8c8d; font-style: italic; font-size:14px; text-align:center; width:100%;">No se encontraron clientes registrados con el filtro especificado.</p>`;
-        }
-    }
-
-    function actualizarVistasTablas() {
-        calcularSaldosYTotales();
-        actualizarSelectClientesFiltro();
-        renderizarResumenClientesAcumulado();
-        renderizarCarneCliente();
-    }
-
-    function renderizarCarneCliente() {
-        const tbody = document.getElementById('carne-cliente-cuerpo');
-        tbody.innerHTML = '';
-
-        const clienteSelect = document.getElementById('filtro-cliente-select').value.toUpperCase().trim();
-        const clienteInput = document.getElementById('filtro-cliente-input').value.toUpperCase().trim();
-        const filtroCliente = clienteSelect || clienteInput;
-
-        let visibles = 0;
-
-        movimientos.forEach((mov) => {
-            if (mov.subTipo !== 'cliente') return;
-
-            let clienteNombre = (mov.cliente || '').toUpperCase();
-            
-            if (filtroCliente && !clienteNombre.includes(filtroCliente)) return;
-            if (!coincideRangoFecha(mov.fecha)) return;
-
-            visibles++;
-            const tr = document.createElement('tr');
-            let total = parseFloat(mov.montoCalculado || 0);
-            let abono = parseFloat(mov.abono || 0);
-            let saldo = total - abono;
-            
-            let pesoDisplay = mov.isAbonoPuro ? '-' : `${parseFloat(mov.peso || 0).toFixed(3)} KG`;
-            let precioDisplay = mov.isAbonoPuro ? '-' : formatearMoneda(parseFloat(mov.precio || 0));
-            let horaDisplay = mov.hora || '--:--';
-
-            tr.innerHTML = `
-                <td>${formatearFecha(mov.fecha)}</td>
-                <td><span class="hora-badge">🕒 ${horaDisplay}</span></td>
-                <td><strong>${mov.cliente}</strong></td>
-                <td><span class="badge-pago">${mov.metodoPago}</span></td>
-                <td>${mov.concepto}</td>
-                <td>${pesoDisplay}</td>
-                <td>${precioDisplay}</td>
-                <td style="font-weight:bold; color:#2c3e50;">${formatearMoneda(total)}</td>
-                <td class="monto-ingreso">${formatearMoneda(abono)}</td>
-                <td class="${saldo <= 0 ? 'monto-ingreso' : 'monto-egreso'}">${formatearMoneda(saldo)}</td>
-                <td><button class="btn-borrar" onclick="eliminarMovimiento('${mov.id}')">🗑️</button></td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        if (visibles === 0) {
-            tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#7f8c8d; font-style:italic; padding: 20px;">No se encontraron notas o pagos para las fechas y clientes seleccionados.</td></tr>`;
-        }
-    }
-
-    // Guardar registro manual
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const tipoRegistro = document.getElementById('c_tipo_registro').value;
-        const nombre = document.getElementById('c_nombre').value.toUpperCase().trim();
-        const pago = document.getElementById('c_pago').value;
-        const concepto = document.getElementById('c_concepto').value.toUpperCase();
-        
-        let peso = 0;
-        let precio = 0;
-        let abono = 0;
-        let totalCalculado = 0;
-        let isAbonoPuro = false;
-
-        if (tipoRegistro === 'venta') {
-            peso = parseFloat(document.getElementById('c_peso').value || 0);
-            precio = parseFloat(document.getElementById('c_precio').value || 0);
-            abono = parseFloat(document.getElementById('c_abono').value || 0);
-            totalCalculado = peso * precio;
-        } else {
-            abono = parseFloat(document.getElementById('c_abono').value || 0);
-            isAbonoPuro = true;
-        }
-
-        try {
-            await addDoc(collection(db, "movimientos"), {
-                fecha: inputFecha.value,
-                hora: obtenerHoraActual(),
-                subTipo: 'cliente',
-                cliente: nombre,
-                metodoPago: pago,
-                concepto: concepto,
-                peso: peso,
-                precio: precio,
-                montoCalculado: totalCalculado,
-                abono: abono,
-                isAbonoPuro: isAbonoPuro
-            });
-
-            form.reset();
-            establecerFechaDeHoy();
-            ajustarCamposFormulario();
-            alert('¡Registro guardado con éxito!');
-        } catch (error) {
-            console.error("Error al guardar:", error);
-            alert("Error al guardar el movimiento.");
-        }
-    });
-
-    window.eliminarMovimiento = async function(id) {
-        if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
-            try {
-                await deleteDoc(doc(db, "movimientos", id));
-            } catch (err) {
-                console.error("Error al eliminar:", err);
-            }
-        }
-    };
-
-    // Escuchar Firebase en tiempo real
-    onSnapshot(collection(db, "movimientos"), (snapshot) => {
-        movimientos = [];
-        snapshot.forEach((doc) => {
-            movimientos.push({ id: doc.id, ...doc.data() });
-        });
-        actualizarVistasTablas();
-    });
-
-    // Inicializar
-    establecerFechaDeHoy();
-    ajustarCamposFormulario();
-
 </script>
+
 </body>
 </html>
