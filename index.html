@@ -285,7 +285,7 @@
     <!-- ================================================= -->
     <div id="modulo-carne" class="modulo-contenedor">
         <div class="barra-regreso-header">
-            <h2 style="margin:0; border:none; color:#e67e22;">Gestión: Módulo Carne 🥩</h2>
+            <h2 style="margin:0; border:none; color:#e67e22;">Módulo Carne 🥩</h2>
             <button class="btn-regresar-menu" onclick="irAlMenuPrincipal()">⬅️ Volver al Menú Principal</button>
         </div>
 
@@ -834,7 +834,7 @@
     window.verHistorialCliente = function(clienteNombre, modulo) {
         clienteSeleccionadoModal = clienteNombre;
         moduloActualModal = modulo;
-        document.getElementById('modal-titulo-cliente').innerText = `Desglose de Historial (${modulo.toUpperCase()}) : ${clienteNombre}`;
+        document.getElementById('modal-titulo-cliente').innerText = `Desglose de Historial (${modulo.toUpperCase()}): ${clienteNombre}`;
         
         const selectFiltro = document.getElementById(`filtro-cliente-select-${modulo}`);
         if(selectFiltro) {
@@ -1174,9 +1174,9 @@
 
         let filasTabla = [];
         let totalGeneral = 0;
+        let totalAbonado = 0;
 
         if (modulo === 'carne') {
-            let totalAbonado = 0;
             filasTabla = datosFiltrados.map(mov => {
                 const totalNota = parseFloat(mov.montoCalculado || 0);
                 const abonoNota = parseFloat(mov.abono || 0);
@@ -1186,10 +1186,10 @@
                 return [
                     mov.fecha,
                     mov.cliente,
-                    mov.concepto || 'VENTA',
+                    mov.concepto || (mov.isAbonoPuro ? 'ABONO A CUENTA' : 'VENTA'),
                     mov.metodoPago || 'Efectivo',
-                    `${parseFloat(mov.peso || 0).toFixed(3)} KG`,
-                    formatearMoneda(mov.precio),
+                    mov.isAbonoPuro ? '-' : `${parseFloat(mov.peso || 0).toFixed(3)} KG`,
+                    mov.isAbonoPuro ? '-' : formatearMoneda(mov.precio),
                     formatearMoneda(totalNota),
                     formatearMoneda(abonoNota)
                 ];
@@ -1234,18 +1234,41 @@
         }
 
         let finalY = doc.lastAutoTable.finalY + 10;
-        if (finalY > 230) { doc.addPage(); finalY = 20; }
+        if (finalY > 220) { doc.addPage(); finalY = 20; }
 
-        doc.setFillColor(245, 247, 250);
-        doc.setDrawColor(200, 200, 200);
-        doc.rect(110, finalY, 90, 20, "FD");
+        if (modulo === 'carne') {
+            const saldoPendiente = totalGeneral - totalAbonado;
 
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(50, 50, 50);
-        doc.text("TOTAL GENERAL:", 114, finalY + 12);
-        doc.setTextColor(...colorAccent);
-        doc.text(formatearMoneda(totalGeneral), 195, finalY + 12, { align: "right" });
+            doc.setFillColor(245, 247, 250);
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(95, finalY, 105, 26, "FD");
+
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(50, 50, 50);
+            doc.text("TOTAL COMPRADO:", 99, finalY + 6);
+            doc.text(formatearMoneda(totalGeneral), 195, finalY + 6, { align: "right" });
+
+            doc.text("TOTAL ABONADO:", 99, finalY + 13);
+            doc.setTextColor(39, 174, 96);
+            doc.text(formatearMoneda(totalAbonado), 195, finalY + 13, { align: "right" });
+
+            doc.setFontSize(9);
+            doc.setTextColor(192, 57, 43);
+            doc.text("SALDO PENDIENTE A PAGAR:", 99, finalY + 21);
+            doc.text(formatearMoneda(saldoPendiente), 195, finalY + 21, { align: "right" });
+        } else {
+            doc.setFillColor(245, 247, 250);
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(110, finalY, 90, 16, "FD");
+
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(50, 50, 50);
+            doc.text("TOTAL GENERAL:", 114, finalY + 10);
+            doc.setTextColor(...colorAccent);
+            doc.text(formatearMoneda(totalGeneral), 195, finalY + 10, { align: "right" });
+        }
 
         const nombreArchivo = filtroCliente ? `Reporte_${modulo}_${filtroCliente.replace(/\s+/g, '_')}.pdf` : `Reporte_General_${modulo}.pdf`;
         doc.save(nombreArchivo);
